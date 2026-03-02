@@ -482,6 +482,11 @@ body {
 .two-col-list > div { min-width: 0; overflow: hidden; }
 .two-col-list ul { list-style: none; padding-left: 0; font-size: 0.8rem; line-height: 1.8; }
 .two-col-list strong { font-size: 0.75rem; color: var(--iron); font-family: var(--font-ui); }
+
+/* Stacked lang/tools layout (used in col-left) */
+.lang-tools-stacked { display: flex; flex-direction: column; gap: 0.75rem; }
+.lang-tools-group { }
+.lang-tools-group ul { list-style: none; padding-left: 0; font-size: 0.82rem; }
 .stonecunning-note { font-size: 0.72rem; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border); color: var(--ink-soft); line-height: 1.4; }
 
 /* ──────────────────── COMBAT TOP ──────────────────── */
@@ -786,6 +791,28 @@ body {
   flex-direction: column;
   gap: 4px;
   min-height: 20px;
+}
+
+/* Full-width equipment section overrides */
+.equipment-full {
+  margin-top: 0;
+}
+.equipment-full .equip-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.equipment-full .equip-section-header .section-title {
+  margin-bottom: 0;
+}
+.equipment-full .equip-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 5px;
+  min-height: 80px;
 }
 
 .equip-item {

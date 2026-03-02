@@ -327,15 +327,15 @@
         <!-- TOOLS & LANGUAGES -->
         <section class="section tools-lang-section">
           <h2 class="section-title">Languages &amp; Tools</h2>
-          <div class="two-col-list">
-            <div>
+          <div class="lang-tools-stacked">
+            <div class="lang-tools-group">
               <div class="dyn-list-header">
                 <strong>Languages</strong>
                 <button class="btn-add-inline no-print" onclick="addLanguage()">+ Add</button>
               </div>
               <ul id="languages-list"><!-- JS rendered --></ul>
             </div>
-            <div>
+            <div class="lang-tools-group">
               <div class="dyn-list-header">
                 <strong>Tool Proficiencies</strong>
                 <button class="btn-add-inline no-print" onclick="addTool()">+ Add</button>
@@ -642,40 +642,6 @@
           <div id="feats-list" class="feat-grid"><!-- JS rendered --></div>
         </section>
 
-        <!-- EQUIPMENT -->
-        <section class="section equipment-section">
-          <h2 class="section-title">Equipment &amp; Magic Items</h2>
-
-          <!-- Category filter tabs -->
-          <div class="equip-tabs no-print">
-            <button class="equip-tab active" data-cat="all" onclick="filterEquip(this,'all')">All</button>
-            <button class="equip-tab" data-cat="armor" onclick="filterEquip(this,'armor')">Armor</button>
-            <button class="equip-tab" data-cat="weapon" onclick="filterEquip(this,'weapon')">Weapons</button>
-            <button class="equip-tab" data-cat="magic" onclick="filterEquip(this,'magic')">Magic</button>
-            <button class="equip-tab" data-cat="tool" onclick="filterEquip(this,'tool')">Tools</button>
-            <button class="equip-tab" data-cat="consumable" onclick="filterEquip(this,'consumable')">Consumables</button>
-            <button class="equip-tab" data-cat="misc" onclick="filterEquip(this,'misc')">Misc</button>
-          </div>
-
-          <ul class="equip-list" id="equip-list">
-            <!-- Items injected by JS -->
-          </ul>
-
-          <!-- Add item form -->
-          <div class="equip-add-row no-print">
-            <select id="equip-new-cat" class="equip-cat-select">
-              <option value="armor">Armor</option>
-              <option value="weapon">Weapon</option>
-              <option value="magic" selected>Magic</option>
-              <option value="tool">Tool</option>
-              <option value="consumable">Consumable</option>
-              <option value="misc">Misc</option>
-            </select>
-            <input type="text" id="equip-new-name" placeholder="Item name" class="equip-new-name" />
-            <input type="text" id="equip-new-desc" placeholder="Description (optional)" class="equip-new-desc" />
-            <button class="btn-small" onclick="addEquipItem()">+ Add</button>
-          </div>
-        </section>
 
       </div><!-- end col-right -->
     </div><!-- end sheet-body -->
@@ -882,6 +848,43 @@
       </section>
 
     </div><!-- end sheet-full-width -->
+
+    <!-- ═══════════════════════ EQUIPMENT (FULL WIDTH) ═══════════════════════ -->
+    <div class="sheet-full-width">
+      <section class="section equipment-section equipment-full">
+        <div class="equip-section-header">
+          <h2 class="section-title">&#9878; Equipment &amp; Magic Items</h2>
+          <div class="equip-tabs no-print">
+            <button class="equip-tab active" data-cat="all" onclick="filterEquip(this,'all')">All</button>
+            <button class="equip-tab" data-cat="armor" onclick="filterEquip(this,'armor')">Armor</button>
+            <button class="equip-tab" data-cat="weapon" onclick="filterEquip(this,'weapon')">Weapons</button>
+            <button class="equip-tab" data-cat="magic" onclick="filterEquip(this,'magic')">Magic</button>
+            <button class="equip-tab" data-cat="tool" onclick="filterEquip(this,'tool')">Tools</button>
+            <button class="equip-tab" data-cat="consumable" onclick="filterEquip(this,'consumable')">Consumables</button>
+            <button class="equip-tab" data-cat="misc" onclick="filterEquip(this,'misc')">Misc</button>
+          </div>
+        </div>
+
+        <ul class="equip-list" id="equip-list">
+          <!-- Items injected by JS -->
+        </ul>
+
+        <!-- Add item form -->
+        <div class="equip-add-row no-print">
+          <select id="equip-new-cat" class="equip-cat-select">
+            <option value="armor">Armor</option>
+            <option value="weapon">Weapon</option>
+            <option value="magic" selected>Magic</option>
+            <option value="tool">Tool</option>
+            <option value="consumable">Consumable</option>
+            <option value="misc">Misc</option>
+          </select>
+          <input type="text" id="equip-new-name" placeholder="Item name" class="equip-new-name" />
+          <input type="text" id="equip-new-desc" placeholder="Description (optional)" class="equip-new-desc" />
+          <button class="btn-small" onclick="addEquipItem()">+ Add</button>
+        </div>
+      </section>
+    </div><!-- end equipment full-width -->
 
     <footer class="sheet-footer">
       <span>Thrain (Kreb-Smasher) Ironhammerson · Rockman · Fighter (Rune Knight) · Lawful Good</span>
