@@ -209,13 +209,25 @@ function recalcAll() {
   // Initiative
   setText('initiative-display', fmtMod(mDex));
 
+  // AC — Plate (18) + optional shield (+2)
+  const shieldActive = document.getElementById('shield-active')?.checked ?? false;
+  const acVal = 18 + (shieldActive ? 2 : 0);
+  setText('ac-display', acVal);
+  const acNote = document.getElementById('ac-note');
+  if (acNote) acNote.textContent = shieldActive ? 'Plate + Shield' : 'Plate Armor';
+
   // Rune Save DC: 8 + prof + CON mod
   const runeDC = 8 + prof + mCon;
   setText('rune-dc-display', runeDC);
+  // Update inline DC references inside rune cards
+  document.querySelectorAll('.rune-dc-inline').forEach(el => { el.textContent = runeDC; });
 
   // Giant's Might: uses = prof bonus
   setText('giants-might-uses', prof);
   setText('gm-uses-text', prof);
+
+  // Runic Shield: uses = prof bonus (per RAW, recharges LR)
+  setText('runic-shield-max', prof);
 
   // Rockman Toughness: +1 per level
   setText('toughness-total', totalLevel);
@@ -265,21 +277,53 @@ function calcTotalLevel() {
 
 /** Update weapon attack bonus displays. */
 function updateWeaponCalcs(mStr, mDex, prof, beltActive) {
-  const effStr = beltActive ? Math.max(mStr, mod(BELT_STR)) : mStr;
+  const effStrMod = beltActive ? Math.max(mStr, mod(BELT_STR)) : mStr;
+  const magicBonus = DWARVEN_THROWER_BONUS; // +3
 
-  // Dwarven Thrower: STR + prof + magic bonus + archery (ranged)
-  const throwerMelee = effStr + prof + DWARVEN_THROWER_BONUS;
-  const throwerRanged = effStr + prof + DWARVEN_THROWER_BONUS + ARCHERY_STYLE_BONUS;
-  setText('thrower-hit', `+${throwerMelee} / ${fmtMod(throwerRanged)} ranged`);
+  // ── Dwarven Thrower melee ──
+  const meleeMod  = effStrMod + prof + magicBonus;     // e.g. +4+6+3 = +13 (no belt)
+  const meleeDmg  = effStrMod + magicBonus;             // damage bonus only
+  setText('thrower-melee-hit', fmtMod(meleeMod));
+  setHtml('thrower-melee-dmg', `1d8${fmtMod(meleeDmg)} bludg<br/><em>Versatile: 1d10${fmtMod(meleeDmg)}</em>`);
 
-  // Halberd & Battle Axe: STR + prof
-  const meleeBonus = effStr + prof;
+  // ── Dwarven Thrower thrown (Archery +2) ──
+  const thrownMod = effStrMod + prof + magicBonus + ARCHERY_STYLE_BONUS; // +15 no belt
+  setText('thrower-thrown-hit', fmtMod(thrownMod));
+  setHtml('thrower-thrown-dmg',
+    `2d8${fmtMod(meleeDmg)} bludg<br/><em>vs Giant: 3d8${fmtMod(meleeDmg)}</em>`);
+
+  // ── Dwarven Thrower GWM melee (–5/+10) ──
+  const gwmMeleeMod = meleeMod - 5;
+  const gwmMeleeDmg = meleeDmg + 10;
+  setText('thrower-gwm-hit', fmtMod(gwmMeleeMod));
+  setHtml('thrower-gwm-dmg', `1d8${fmtMod(gwmMeleeDmg)} bludg`);
+
+  // ── Dwarven Thrower Sharpshooter thrown (–5/+10) ──
+  const ssMod = thrownMod - 5;
+  const ssDmg = meleeDmg + 10;
+  setText('thrower-ss-hit', fmtMod(ssMod));
+  setHtml('thrower-ss-dmg',
+    `2d8${fmtMod(ssDmg)} bludg<br/><em>vs Giant: 3d8${fmtMod(ssDmg)}</em>`);
+
+  // ── Halberd & Battle Axe ──
+  const meleeBonus = effStrMod + prof;
+  const meleeOnlyDmg = effStrMod;
   setText('halberd-hit', fmtMod(meleeBonus));
+  setHtml('halberd-dmg',
+    `1d10${fmtMod(meleeOnlyDmg)} slash<br/><em>Butt: 1d4${fmtMod(meleeOnlyDmg)}</em>`);
   setText('axe-hit', fmtMod(meleeBonus));
+  setHtml('axe-dmg',
+    `1d8${fmtMod(meleeOnlyDmg)} slash<br/><em>Versatile: 1d10${fmtMod(meleeOnlyDmg)}</em>`);
 
-  // GWM version: -5 to hit
-  const throwerGWM = throwerRanged - 5;
-  setText('thrower-gwm-hit', fmtMod(throwerGWM));
+  // ── Second Wind display ──
+  const totalLv = calcTotalLevel();
+  setText('sw-level', totalLv);
+}
+
+/** Set innerHTML of an element by id */
+function setHtml(id, html) {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = html;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -375,6 +419,159 @@ function restoreGiantsMight() {
   if (!input) return;
   const prof = profBonusForLevel(calcTotalLevel());
   input.value = prof;
+  saveSheet(true);
+}
+
+// ─────────────────────────────────────────────────────────────
+// COMBAT RESOURCES
+// ─────────────────────────────────────────────────────────────
+
+/** Uncheck (restore) a list of checkbox data-keys — used for SR/LR buttons */
+function restoreResource(keys) {
+  keys.forEach(key => {
+    const el = document.querySelector(`[data-key="${key}"]`);
+    if (el && el.type === 'checkbox') el.checked = false;
+  });
+  saveSheet(true);
+}
+
+function restoreRunicShield() {
+  const prof = profBonusForLevel(calcTotalLevel());
+  const el = document.querySelector('[data-key="runic_shield_uses"]');
+  if (el) el.value = prof;
+  saveSheet(true);
+}
+
+/** Short Rest: restore Action Surge + Second Wind */
+function doShortRest() {
+  if (!confirm('Take a Short Rest? This restores Action Surge and Second Wind.')) return;
+  restoreResource(['as1', 'as2', 'sw1']);
+  // Hit dice can be spent — just remind
+  flashStatus('Short Rest taken — spend Hit Dice to heal if needed', 'success');
+}
+
+/** Long Rest: restore everything */
+function doLongRest() {
+  if (!confirm('Take a Long Rest? This restores all resources.')) return;
+  // Action Surge, Indomitable, Second Wind
+  restoreResource(['as1', 'as2', 'ind1', 'ind2', 'ind3', 'sw1']);
+  // All runes
+  restoreResource(['rune_fire_used', 'rune_stone_used', 'rune_hill_used',
+                   'rune_cloud_used', 'rune_storm_used']);
+  // Runic Shield
+  restoreRunicShield();
+  // Giant's Might
+  restoreGiantsMight();
+  // Reset hit dice used to 0 (long rest restores up to half total)
+  const hdu = document.querySelector('[data-key="hit_dice_used"]');
+  if (hdu) hdu.value = 0;
+  flashStatus('Long Rest complete — all resources restored', 'success');
+  saveSheet(true);
+}
+
+// ─────────────────────────────────────────────────────────────
+// JOURNAL XP SYSTEM
+// ─────────────────────────────────────────────────────────────
+
+/** In-memory journal entries */
+let journalEntries = [];
+
+function journalId() {
+  return 'j_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5);
+}
+
+/** Calculate XP value for one journal entry (10% of XP needed for next level) */
+function calcJournalXP(currentXP) {
+  const levels = Object.keys(XP_THRESHOLDS).map(Number).sort((a, b) => a - b);
+  let currentLevel = 20;
+  for (const lv of levels) {
+    if (currentXP >= XP_THRESHOLDS[lv]) currentLevel = lv;
+  }
+  const nextLevel = currentLevel + 1;
+  const nextThreshold = XP_THRESHOLDS[nextLevel];
+  const currentThreshold = XP_THRESHOLDS[currentLevel];
+  if (!nextThreshold) return 0;
+  return Math.floor((nextThreshold - currentThreshold) * 0.1);
+}
+
+function updateJournalPreview() {
+  const currentXP = parseInt(document.getElementById('xp-input')?.value || '355000', 10);
+  const jxp = calcJournalXP(currentXP);
+  const el = document.getElementById('journal-xp-value');
+  if (el) el.textContent = jxp.toLocaleString() + ' XP';
+}
+
+function renderJournalEntries() {
+  const container = document.getElementById('journal-entries');
+  if (!container) return;
+  container.innerHTML = '';
+  let totalEarned = 0;
+
+  journalEntries.forEach(entry => {
+    if (entry.claimed) totalEarned += (entry.xpValue || 0);
+    const div = document.createElement('div');
+    div.className = 'journal-entry' + (entry.claimed ? ' journal-claimed' : '');
+    div.dataset.id = entry.id;
+    div.innerHTML = `
+      <input type="checkbox" class="journal-check" ${entry.claimed ? 'checked disabled' : ''}
+        onchange="claimJournalEntry('${entry.id}', this)" />
+      <span class="journal-entry-title" contenteditable="${entry.claimed ? 'false' : 'true'}"
+        data-jid="${entry.id}" onblur="updateJournalTitle('${entry.id}', this)">${escapeHtml(entry.title)}</span>
+      <span class="journal-entry-xp">${entry.claimed ? '+' + (entry.xpValue||0).toLocaleString() + ' XP ✓' : (entry.xpValue||0).toLocaleString() + ' XP'}</span>
+      ${entry.claimed ? '' : `<button class="equip-delete no-print" onclick="deleteJournalEntry('${entry.id}')">✕</button>`}
+    `;
+    container.appendChild(div);
+  });
+
+  setText('journal-total-xp', totalEarned.toLocaleString());
+  updateJournalPreview();
+}
+
+function addJournalEntry() {
+  const input = document.getElementById('journal-new-title');
+  const title = input?.value.trim() || ('Session ' + (journalEntries.length + 1));
+  const currentXP = parseInt(document.getElementById('xp-input')?.value || '355000', 10);
+  const xpValue = calcJournalXP(currentXP);
+
+  journalEntries.push({ id: journalId(), title, xpValue, claimed: false, date: new Date().toISOString() });
+  if (input) input.value = '';
+  renderJournalEntries();
+  saveSheet(true);
+}
+
+function claimJournalEntry(id, checkbox) {
+  const entry = journalEntries.find(e => e.id === id);
+  if (!entry || entry.claimed) { if (checkbox) checkbox.checked = !!entry?.claimed; return; }
+
+  if (!confirm(`Mark journal "${entry.title}" as submitted? This will add ${entry.xpValue.toLocaleString()} XP to your total.`)) {
+    checkbox.checked = false;
+    return;
+  }
+
+  entry.claimed = true;
+
+  // Add XP to the sheet
+  const xpInput = document.getElementById('xp-input');
+  const headerXP = document.querySelector('[data-key="current_xp"]');
+  const currentXP = parseInt(xpInput?.value || '0', 10);
+  const newXP = currentXP + entry.xpValue;
+  if (xpInput) xpInput.value = newXP;
+  if (headerXP) headerXP.textContent = newXP;
+  updateXP();
+
+  renderJournalEntries();
+  saveSheet(true);
+  flashStatus(`+${entry.xpValue.toLocaleString()} XP from journal!`, 'success');
+}
+
+function updateJournalTitle(id, el) {
+  const entry = journalEntries.find(e => e.id === id);
+  if (entry) { entry.title = el.textContent.trim(); saveSheet(true); }
+}
+
+function deleteJournalEntry(id) {
+  journalEntries = journalEntries.filter(e => e.id !== id);
+  renderJournalEntries();
   saveSheet(true);
 }
 
@@ -511,6 +708,9 @@ function collectData() {
   // Equipment
   data['_equipment'] = equipmentItems;
 
+  // Journal entries
+  data['_journal_entries'] = journalEntries;
+
   return data;
 }
 
@@ -612,6 +812,12 @@ function applySheetData(data) {
     equipmentItems = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
   }
   renderEquipment();
+
+  // Journal entries
+  if (Array.isArray(data['_journal_entries'])) {
+    journalEntries = data['_journal_entries'];
+    renderJournalEntries();
+  }
 
   // Recalculate all derived stats after applying new data
   recalcAll();

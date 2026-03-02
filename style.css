@@ -1052,6 +1052,259 @@ input[type="number"]:focus, input[type="text"]:focus { border-color: var(--gold-
   .combat-features-section { break-inside: avoid; }
 }
 
+/* ──────────────────── SHIELD TOGGLE ──────────────────── */
+.shield-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.72rem;
+  color: var(--iron);
+  margin-top: 0.3rem;
+  justify-content: center;
+}
+.shield-toggle input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  accent-color: var(--rune-gold);
+}
+
+/* ──────────────────── MULTICLASS HINT ──────────────────── */
+.mc-hint {
+  font-size: 0.72rem;
+  font-style: italic;
+  color: var(--iron);
+  background: rgba(184,134,11,0.07);
+  border: 1px solid rgba(184,134,11,0.25);
+  border-radius: 4px;
+  padding: 0.4rem 0.6rem;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+/* ──────────────────── COMBAT RESOURCES ──────────────────── */
+.resources-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+}
+.resource-block {
+  background: rgba(255,255,255,0.5);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+}
+.resource-name {
+  font-size: 0.73rem;
+  font-weight: bold;
+  color: var(--rune-gold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.resource-value {
+  font-size: 0.7rem;
+  color: var(--iron);
+  margin-bottom: 0.3rem;
+}
+.resource-tracker {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+.res-check {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--rune-gold);
+}
+.resource-note {
+  font-size: 0.65rem;
+  color: var(--iron);
+  font-style: italic;
+  margin-top: 0.2rem;
+}
+.resource-restore {
+  font-size: 0.65rem;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  cursor: pointer;
+  color: var(--iron);
+  margin-top: 0.2rem;
+}
+.resource-restore:hover { background: rgba(184,134,11,0.15); }
+
+/* Extra Attack display */
+.extra-atk-block { grid-column: span 2; }
+.extra-atk-value {
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: var(--rune-gold);
+  text-align: center;
+}
+
+/* Rest buttons */
+.rest-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.btn-rest {
+  flex: 1;
+  padding: 0.3rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: opacity 0.15s;
+}
+.btn-rest:hover { opacity: 0.85; }
+.btn-rest.sr {
+  background: #2563eb;
+  color: #fff;
+}
+.btn-rest.lr {
+  background: #6d28d9;
+  color: #fff;
+}
+
+/* ──────────────────── RUNE USE TRACKERS ──────────────────── */
+.rune-use-tracker {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.4rem;
+  flex-wrap: wrap;
+}
+.rune-use-label {
+  font-size: 0.68rem;
+  color: var(--iron);
+  font-style: italic;
+  margin-right: 0.2rem;
+}
+.rune-check {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: var(--rune-gold);
+}
+.rune-shield-uses {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--iron);
+  margin-top: 0.4rem;
+}
+.rune-shield-uses input[type="number"] {
+  width: 44px;
+  padding: 0.15rem 0.3rem;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.6);
+  font-size: 0.75rem;
+  text-align: center;
+}
+.btn-rune-lr {
+  font-size: 0.65rem;
+  background: #6d28d9;
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  padding: 0.15rem 0.4rem;
+  cursor: pointer;
+}
+
+/* ──────────────────── JOURNAL XP ──────────────────── */
+.journal-section { margin-top: 0.5rem; }
+.journal-info {
+  font-size: 0.73rem;
+  color: var(--iron);
+  font-style: italic;
+  margin-bottom: 0.4rem;
+  line-height: 1.4;
+}
+.journal-xp-preview {
+  font-size: 0.73rem;
+  background: rgba(184,134,11,0.12);
+  border: 1px solid rgba(184,134,11,0.3);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  margin-bottom: 0.5rem;
+  color: var(--rune-gold);
+  font-weight: bold;
+}
+.journal-entries { margin-bottom: 0.4rem; }
+.journal-entry {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.3rem;
+  border-bottom: 1px solid rgba(184,134,11,0.15);
+  font-size: 0.78rem;
+}
+.journal-entry.journal-claimed {
+  opacity: 0.6;
+  background: rgba(0,128,0,0.06);
+}
+.journal-check {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+  accent-color: #16a34a;
+}
+.journal-entry-title {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.78rem;
+  min-width: 0;
+  color: inherit;
+}
+.journal-entry-title:focus {
+  background: rgba(255,255,255,0.5);
+  border-radius: 3px;
+  padding: 0 0.2rem;
+}
+.journal-entry-xp {
+  font-size: 0.7rem;
+  color: var(--rune-gold);
+  white-space: nowrap;
+  font-style: italic;
+}
+.journal-add-row {
+  display: flex;
+  gap: 0.4rem;
+  margin-top: 0.4rem;
+}
+.journal-new-input {
+  flex: 1;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.78rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(255,255,255,0.7);
+}
+.journal-total-row {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: bold;
+  color: #16a34a;
+  margin-top: 0.4rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.3rem;
+}
+
 /* ──────────────────── RESPONSIVE ──────────────────── */
 @media (max-width: 960px) {
   .sheet-body { grid-template-columns: 1fr; }

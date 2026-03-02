@@ -226,7 +226,8 @@
           <div class="combat-stat-box">
             <div class="big-stat" id="ac-display">18</div>
             <div class="field-label">Armor Class</div>
-            <div class="sub-note">Plate Armor</div>
+            <div class="sub-note" id="ac-note">Plate Armor</div>
+            <label class="shield-toggle no-print"><input type="checkbox" id="shield-active" data-key="shield_active" onchange="recalcAll(); saveSheet(true);" /> Shield (+2)</label>
           </div>
           <div class="combat-stat-box">
             <div class="big-stat" id="initiative-display">+0</div>
@@ -279,6 +280,63 @@
           </div>
         </section>
 
+        <!-- COMBAT RESOURCES -->
+        <section class="section combat-resources-section">
+          <h2 class="section-title">⚔ Combat Resources</h2>
+          <div class="resources-grid">
+
+            <div class="resource-block">
+              <div class="resource-name">Extra Attack</div>
+              <div class="resource-value">4×</div>
+              <div class="resource-note">attacks per Attack action</div>
+            </div>
+
+            <div class="resource-block">
+              <div class="resource-name">Action Surge</div>
+              <div class="resource-tracker">
+                <input type="checkbox" data-key="as1" class="res-check" />
+                <input type="checkbox" data-key="as2" class="res-check" />
+              </div>
+              <div class="resource-note">2 / Short or Long Rest</div>
+              <div class="resource-restore no-print">
+                <button class="btn-tiny" onclick="restoreResource(['as1','as2'])">SR</button>
+                <button class="btn-tiny" onclick="restoreResource(['as1','as2'])">LR</button>
+              </div>
+            </div>
+
+            <div class="resource-block">
+              <div class="resource-name">Indomitable</div>
+              <div class="resource-tracker">
+                <input type="checkbox" data-key="ind1" class="res-check" />
+                <input type="checkbox" data-key="ind2" class="res-check" />
+                <input type="checkbox" data-key="ind3" class="res-check" />
+              </div>
+              <div class="resource-note">3 / Long Rest · Reroll failed save</div>
+              <div class="resource-restore no-print">
+                <button class="btn-tiny" onclick="restoreResource(['ind1','ind2','ind3'])">LR</button>
+              </div>
+            </div>
+
+            <div class="resource-block">
+              <div class="resource-name">Second Wind</div>
+              <div class="resource-tracker">
+                <input type="checkbox" data-key="sw1" class="res-check" />
+              </div>
+              <div class="resource-note">1 / Short or Long Rest · 1d10+<span id="sw-level">20</span> HP</div>
+              <div class="resource-restore no-print">
+                <button class="btn-tiny" onclick="restoreResource(['sw1'])">SR</button>
+                <button class="btn-tiny" onclick="restoreResource(['sw1'])">LR</button>
+              </div>
+            </div>
+
+          </div>
+          <!-- Long/Short rest master buttons -->
+          <div class="rest-buttons no-print">
+            <button class="btn-rest sr" onclick="doShortRest()">⏱ Short Rest</button>
+            <button class="btn-rest lr" onclick="doLongRest()">🌙 Long Rest</button>
+          </div>
+        </section>
+
         <!-- ATTACKS & WEAPONS -->
         <section class="section weapons-section">
           <h2 class="section-title">Attacks &amp; Weapons</h2>
@@ -288,34 +346,46 @@
             </thead>
             <tbody>
               <tr>
-                <td><strong>Dwarven Thrower</strong><br/><em>(+3 Warhammer)</em></td>
-                <td id="thrower-hit">+15</td>
-                <td>1d8+9 bludg<br/>Thrown: 3d8+9<br/>vs Giant: 5d8+9</td>
-                <td>Thrown 20/60 ft · Returns end of turn · GWM: −5/+10 opt · Versatile 1d10</td>
+                <td><strong>Dwarven Thrower</strong><br/><em>Melee (+3 Warhammer)</em></td>
+                <td id="thrower-melee-hit">+13</td>
+                <td id="thrower-melee-dmg">1d8+7 bludg<br/><em>Versatile: 1d10+7</em></td>
+                <td>GWM opt: −5/+10 · Giant's Might +1d10</td>
+              </tr>
+              <tr>
+                <td><strong>Dwarven Thrower</strong><br/><em>Thrown (20/60 ft)</em></td>
+                <td id="thrower-thrown-hit">+15</td>
+                <td id="thrower-thrown-dmg">2d8+7 bludg<br/><em>vs Giant: 3d8+7</em></td>
+                <td>Returns end of turn · Archery +2 included · GWM or SS opt: −5/+10</td>
+              </tr>
+              <tr class="row-gwm">
+                <td><strong>Dwarven Thrower</strong><br/><em>GWM melee (−5/+10)</em></td>
+                <td id="thrower-gwm-hit">+8</td>
+                <td id="thrower-gwm-dmg">1d8+17 bludg</td>
+                <td>Great Weapon Master · −5 to hit / +10 dmg</td>
+              </tr>
+              <tr class="row-gwm">
+                <td><strong>Dwarven Thrower</strong><br/><em>Sharpshooter thrown (−5/+10)</em></td>
+                <td id="thrower-ss-hit">+10</td>
+                <td id="thrower-ss-dmg">2d8+17 bludg<br/><em>vs Giant: 3d8+17</em></td>
+                <td>Sharpshooter · −5 to hit / +10 dmg · DM approved</td>
               </tr>
               <tr>
                 <td><strong>Halberd</strong><br/><em>(Polearm)</em></td>
                 <td id="halberd-hit">+12</td>
-                <td>1d10+6 slash<br/>Butt end: 1d4+6</td>
-                <td>Reach 10 ft · GWM: −5/+10 opt · Polearm Master BA attack · Giant's Might +1d10</td>
+                <td id="halberd-dmg">1d10+6 slash<br/><em>Butt: 1d4+6</em></td>
+                <td>Reach 10 ft · GWM: −5/+10 · PAM bonus attack · Giant's Might +1d10</td>
               </tr>
               <tr>
                 <td><strong>Battle Axe</strong></td>
                 <td id="axe-hit">+12</td>
-                <td>1d8+6 slash<br/>Versatile: 1d10+6</td>
+                <td id="axe-dmg">1d8+6 slash<br/><em>Versatile: 1d10+6</em></td>
                 <td>GWM: −5/+10 opt</td>
-              </tr>
-              <tr>
-                <td><strong>Dwarven Thrower</strong><br/><em>(GWM active)</em></td>
-                <td id="thrower-gwm-hit">+10</td>
-                <td>1d8+19 bludg<br/>Thrown: 3d8+19</td>
-                <td>-5 to hit / +10 damage · GWM applied</td>
               </tr>
             </tbody>
           </table>
-          <p class="footnote">Belt of Giant Strength (Frost Giant): STR becomes 23 (+6). Checkbox at top enables belt bonus. With belt: melee to-hit +15, damage +6.</p>
-          <p class="footnote">Archery Fighting Style: +2 to ranged attack rolls (already included in Thrown column).</p>
-          <p class="footnote">Giant's Might: Deals extra 1d10 on ONE attack per activation. Action Surge: 1/rest extra action.</p>
+          <p class="footnote">⚡ Damage bonuses update automatically when Belt of Giant Strength checkbox is toggled.</p>
+          <p class="footnote">Dwarven Thrower dice: melee 1d8 · thrown +1d8 extra (total 2d8) · vs Giant +2d8 extra (total 3d8) per RAW.</p>
+          <p class="footnote">Giant's Might adds 1d10 to ONE attack per turn during activation. GWM/SS rows use −5 to hit / +10 flat damage.</p>
         </section>
 
         <!-- XP & LEVEL TRACKER -->
@@ -371,6 +441,11 @@
           <div class="mc-total-row">
             Total Character Level: <strong id="mc-total">20</strong> &nbsp;|&nbsp; Prof Bonus: <strong id="mc-prof">+6</strong>
           </div>
+          <div class="mc-hint no-print">
+            <strong>💡 What updates automatically when you add a level:</strong>
+            Proficiency Bonus, Total Level, Rune Save DC, Giant's Might uses, all skill/save totals, attack bonuses.
+            <br/><strong>What to add manually in the Level Up Log:</strong> new class features (Rage, Reckless Attack, Danger Sense etc), HP increase, new weapon proficiencies.
+          </div>
         </section>
 
         <!-- LEVEL UP LOG -->
@@ -383,6 +458,27 @@
             </div>
           </div>
           <button class="btn-small no-print" onclick="addLevelLogEntry()">+ Log Next Level</button>
+        </section>
+
+        <!-- JOURNAL XP TRACKER -->
+        <section class="section journal-section">
+          <h2 class="section-title">📜 Journal XP Tracker</h2>
+          <div class="journal-info">
+            Journals grant <strong>10% of the XP needed for the next level</strong>.
+            Check the box when submitted to auto-add XP.<br/>
+            <span class="journal-xp-preview">Next journal: <strong id="journal-xp-value">71,000 XP</strong> (10% of 710,000)</span>
+          </div>
+          <div id="journal-entries">
+            <!-- populated by JS -->
+          </div>
+          <div class="journal-add-row no-print">
+            <input type="text" id="journal-new-title" placeholder="Journal entry title / session name" class="journal-new-input" />
+            <button class="btn-small" onclick="addJournalEntry()">+ Add Entry</button>
+          </div>
+          <div class="journal-total-row">
+            <span class="field-label">Total Journal XP Earned:</span>
+            <strong id="journal-total-xp">0</strong>
+          </div>
         </section>
 
       </div><!-- end col-center -->
@@ -398,7 +494,7 @@
             <li><strong>Darkvision:</strong> 120 ft (Stone Rune — invokable)</li>
             <li><strong>Passive Perception:</strong> <span id="senses-perception">18</span></li>
             <li><strong>Passive Insight:</strong> <span id="senses-insight">22</span></li>
-            <li><em>⚠ Disadvantage on Perception checks when Dwarven Thrower is stationary.</em></li>
+            <li><em>⚠ Disadvantage on Perception checks — missing eye (can see through hammer to aim but loses peripheral vision).</em></li>
             <li><strong>Cannot be Surprised</strong> (Storm Rune — while active)</li>
           </ul>
         </section>
@@ -513,49 +609,74 @@
         <div class="rune-grid">
           <div class="rune-card">
             <div class="rune-name fire">🔥 Fire Rune</div>
+            <div class="rune-use-tracker">
+              <span class="rune-use-label">Used:</span>
+              <input type="checkbox" data-key="rune_fire_used" class="rune-check" />
+              <button class="btn-tiny no-print" onclick="restoreResource(['rune_fire_used'])">SR/LR</button>
+            </div>
             <div class="rune-body">
-              <strong>Inscribing:</strong> Weapon or armor. Lasts until used.<br/>
-              <strong>Activate (reaction on hit):</strong> Target makes DC 20 STR save or is restrained. Takes 2d6 fire at start of each turn. Repeats save each turn. Lasts 1 min or until freed (STR DC 20).<br/>
+              <strong>Activate (reaction on hit):</strong> Target makes DC <span class="rune-dc-inline">20</span> STR save or is restrained. Takes 2d6 fire at start of each turn. Repeats save each turn. Lasts 1 min or until freed.<br/>
               <span class="passive-tag">Passive: Double proficiency on Artisan's Tools checks.</span>
             </div>
           </div>
           <div class="rune-card">
             <div class="rune-name stone">🪨 Stone Rune</div>
+            <div class="rune-use-tracker">
+              <span class="rune-use-label">Used:</span>
+              <input type="checkbox" data-key="rune_stone_used" class="rune-check" />
+              <button class="btn-tiny no-print" onclick="restoreResource(['rune_stone_used'])">SR/LR</button>
+            </div>
             <div class="rune-body">
-              <strong>Inscribing:</strong> Weapon or armor. Lasts until used.<br/>
-              <strong>Activate (reaction, 30 ft):</strong> Target makes DC 20 WIS save or falls charmed for 1 min (incapacitated, speed 0). Repeats save each turn. No harm to end. Recharges after short/long rest.<br/>
+              <strong>Activate (reaction, 30 ft):</strong> Target makes DC <span class="rune-dc-inline">20</span> WIS save or charmed 1 min (incapacitated, speed 0). Repeats each turn.<br/>
               <span class="passive-tag">Passive: Darkvision 120 ft.</span>
             </div>
           </div>
           <div class="rune-card">
             <div class="rune-name hill">⛰ Hill Rune</div>
+            <div class="rune-use-tracker">
+              <span class="rune-use-label">Used:</span>
+              <input type="checkbox" data-key="rune_hill_used" class="rune-check" />
+              <button class="btn-tiny no-print" onclick="restoreResource(['rune_hill_used'])">SR/LR</button>
+            </div>
             <div class="rune-body">
-              <strong>Inscribing:</strong> Weapon or armor. Lasts until used.<br/>
-              <strong>Activate (bonus action):</strong> Resistance to bludgeoning, piercing, and slashing damage for 1 minute. Recharges after short/long rest.<br/>
-              <span class="passive-tag">Passive: Advantage on STR checks and saves against being moved or knocked prone.</span>
+              <strong>Activate (bonus action):</strong> Resistance to bludgeoning, piercing, and slashing for 1 min.<br/>
+              <span class="passive-tag">Passive: Advantage on STR checks and saves vs. forced movement and prone.</span>
             </div>
           </div>
           <div class="rune-card">
             <div class="rune-name cloud">☁ Cloud Rune</div>
+            <div class="rune-use-tracker">
+              <span class="rune-use-label">Used:</span>
+              <input type="checkbox" data-key="rune_cloud_used" class="rune-check" />
+              <button class="btn-tiny no-print" onclick="restoreResource(['rune_cloud_used'])">SR/LR</button>
+            </div>
             <div class="rune-body">
-              <strong>Inscribing:</strong> Weapon or armor. Lasts until used.<br/>
-              <strong>Activate (reaction, hit redirected):</strong> When you or a creature you can see within 30 ft is hit, redirect the attack to another creature within 30 ft (DM's call on validity). Recharges after short/long rest.<br/>
-              <span class="passive-tag">Passive: Double proficiency on Sleight of Hand and Deception checks.</span>
+              <strong>Activate (reaction):</strong> Redirect a hit targeting you or ally (30 ft) to another creature within 30 ft.<br/>
+              <span class="passive-tag">Passive: Double proficiency on Sleight of Hand and Deception.</span>
             </div>
           </div>
           <div class="rune-card">
             <div class="rune-name storm">⚡ Storm Rune</div>
+            <div class="rune-use-tracker">
+              <span class="rune-use-label">Used:</span>
+              <input type="checkbox" data-key="rune_storm_used" class="rune-check" />
+              <button class="btn-tiny no-print" onclick="restoreResource(['rune_storm_used'])">SR/LR</button>
+            </div>
             <div class="rune-body">
-              <strong>Inscribing:</strong> Weapon or armor. Lasts until used.<br/>
-              <strong>Activate (bonus action):</strong> Enter prophetic state for 1 min: can't be surprised, advantage on attack rolls/ability checks/saving throws if you roll &lt;10 (use 10 instead). Recharges after short/long rest.<br/>
+              <strong>Activate (bonus action):</strong> Prophetic state 1 min — can't be surprised, treat rolls &lt;10 as 10 for atk/ability/saves.<br/>
               <span class="passive-tag">Passive: Advantage on Arcana checks.</span>
             </div>
           </div>
           <div class="rune-card">
             <div class="rune-name runic-shield">🛡 Runic Shield</div>
+            <div class="rune-use-tracker">
+              <span class="rune-use-label">Uses:</span>
+              <input type="number" class="inline-num" data-key="runic_shield_uses" value="3" min="0" max="20" />
+              <span class="rune-use-label">/ <span id="runic-shield-max">3</span></span>
+              <button class="btn-tiny no-print" onclick="restoreRunicShield()">LR</button>
+            </div>
             <div class="rune-body">
-              <strong>Reaction:</strong> When another creature you can see within 60 ft is hit, force the attacker to reroll the attack. Use the lower roll.<br/>
-              Uses: <input type="number" class="inline-num" data-key="runic_shield_uses" value="3" min="0" max="20" /> / Recharges after long rest.
+              <strong>Reaction (60 ft):</strong> Force attacker to reroll, use lower result. Long rest recharge.
             </div>
           </div>
         </div>
