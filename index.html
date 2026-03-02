@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thrain Ironhammerson — Character Sheet</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <!-- TOOLBAR (hidden on print) -->
+  <div class="toolbar no-print">
+    <span class="toolbar-title">⚒ Thrain Ironhammerson — Character Sheet</span>
+    <div class="toolbar-actions">
+      <button id="btn-save" onclick="saveSheet()">💾 Save</button>
+      <button id="btn-print" onclick="printSheet()">🖨 Print</button>
+      <button id="btn-pdf" onclick="exportPDF()">📄 Export PDF</button>
+      <button id="btn-reset" onclick="resetSheet()">↺ Reset</button>
+    </div>
+    <div id="save-status" class="save-status"></div>
+  </div>
+
+  <!-- MAIN SHEET (this gets printed/exported) -->
+  <div id="character-sheet" class="sheet">
+
+    <!-- ═══════════════════════ HEADER ═══════════════════════ -->
+    <header class="sheet-header">
+      <div class="header-name-block">
+        <div class="field-label">Character Name</div>
+        <div class="character-name" contenteditable="true" data-key="char_name">Thrain (Kreb-Smasher) Ironhammerson</div>
+      </div>
+      <div class="header-meta-grid">
+        <div class="meta-field">
+          <span class="field-label">Class &amp; Level</span>
+          <span class="meta-value" contenteditable="true" data-key="class_level">Fighter (Rune Knight) 20</span>
+        </div>
+        <div class="meta-field">
+          <span class="field-label">Race</span>
+          <span class="meta-value" contenteditable="true" data-key="race">Rockman (Dwarf)</span>
+        </div>
+        <div class="meta-field">
+          <span class="field-label">Background</span>
+          <span class="meta-value" contenteditable="true" data-key="background">Fisherman</span>
+        </div>
+        <div class="meta-field">
+          <span class="field-label">Alignment</span>
+          <span class="meta-value" contenteditable="true" data-key="alignment">Lawful Good</span>
+        </div>
+        <div class="meta-field">
+          <span class="field-label">Player</span>
+          <span class="meta-value" contenteditable="true" data-key="player">—</span>
+        </div>
+        <div class="meta-field">
+          <span class="field-label">XP</span>
+          <span class="meta-value editable-num" contenteditable="true" data-key="current_xp" oninput="updateXP()">355000</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ═══════════════════════ BODY ═══════════════════════ -->
+    <div class="sheet-body">
+
+      <!-- ─── LEFT COLUMN ─── -->
+      <div class="col-left">
+
+        <!-- ABILITY SCORES -->
+        <section class="section ability-scores-section">
+          <h2 class="section-title">Ability Scores</h2>
+          <div class="ability-scores-grid">
+            <div class="ability-block" id="ab-str">
+              <div class="ability-name">STR</div>
+              <div class="ability-modifier" id="mod-str">+4</div>
+              <input class="ability-score" type="number" data-key="stat_str" value="18" min="1" max="30" oninput="recalcAll()" />
+              <div class="ability-note">Base score<br/><span class="belt-note">+5 w/ Belt → 23</span></div>
+            </div>
+            <div class="ability-block" id="ab-dex">
+              <div class="ability-name">DEX</div>
+              <div class="ability-modifier" id="mod-dex">+0</div>
+              <input class="ability-score" type="number" data-key="stat_dex" value="10" min="1" max="30" oninput="recalcAll()" />
+            </div>
+            <div class="ability-block" id="ab-con">
+              <div class="ability-name">CON</div>
+              <div class="ability-modifier" id="mod-con">+6</div>
+              <input class="ability-score" type="number" data-key="stat_con" value="22" min="1" max="30" oninput="recalcAll()" />
+            </div>
+            <div class="ability-block" id="ab-int">
+              <div class="ability-name">INT</div>
+              <div class="ability-modifier" id="mod-int">-1</div>
+              <input class="ability-score" type="number" data-key="stat_int" value="8" min="1" max="30" oninput="recalcAll()" />
+            </div>
+            <div class="ability-block" id="ab-wis">
+              <div class="ability-name">WIS</div>
+              <div class="ability-modifier" id="mod-wis">+2</div>
+              <input class="ability-score" type="number" data-key="stat_wis" value="14" min="1" max="30" oninput="recalcAll()" />
+            </div>
+            <div class="ability-block" id="ab-cha">
+              <div class="ability-name">CHA</div>
+              <div class="ability-modifier" id="mod-cha">+1</div>
+              <input class="ability-score" type="number" data-key="stat_cha" value="12" min="1" max="30" oninput="recalcAll()" />
+            </div>
+          </div>
+          <div class="belt-toggle-row no-print">
+            <label><input type="checkbox" id="belt-active" onchange="recalcAll()"> Belt of Giant Strength (Frost Giant — STR 23) Active</label>
+          </div>
+          <div class="belt-indicator" id="belt-indicator" style="display:none">
+            <span class="badge badge-gold">⚡ Belt Active — STR 23 (+6)</span>
+          </div>
+        </section>
+
+        <!-- PROFICIENCY & INSPIRATION -->
+        <section class="section prof-insp-row">
+          <div class="prof-block">
+            <div class="big-stat" id="prof-bonus-display">+6</div>
+            <div class="field-label">Proficiency Bonus</div>
+            <div class="sub-note">Total Level: <span id="total-level-display">20</span></div>
+          </div>
+          <div class="insp-block">
+            <input type="checkbox" id="inspiration" data-key="inspiration" class="large-checkbox" />
+            <div class="field-label">Inspiration</div>
+          </div>
+          <div class="numa-block">
+            <input class="small-num" type="number" data-key="numa_current" value="20" min="0" max="20" />
+            <span class="field-label">/ <input class="small-num" type="number" data-key="numa_max" value="20" min="0" max="20" /> Numa</span>
+          </div>
+        </section>
+
+        <!-- SAVING THROWS -->
+        <section class="section saving-throws-section">
+          <h2 class="section-title">Saving Throws</h2>
+          <ul class="save-skill-list" id="saving-throws-list">
+            <li><span class="prof-dot" title="Not proficient">○</span> <span class="stat-val" id="save-str">+4</span> Strength</li>
+            <li><span class="prof-dot" title="Not proficient">○</span> <span class="stat-val" id="save-dex">+0</span> Dexterity</li>
+            <li class="proficient"><span class="prof-dot filled" title="Proficient">●</span> <span class="stat-val" id="save-con">+12</span> Constitution</li>
+            <li><span class="prof-dot" title="Not proficient">○</span> <span class="stat-val" id="save-int">-1</span> Intelligence</li>
+            <li class="proficient"><span class="prof-dot filled" title="Proficient">●</span> <span class="stat-val" id="save-wis">+8</span> Wisdom</li>
+            <li><span class="prof-dot" title="Not proficient">○</span> <span class="stat-val" id="save-cha">+1</span> Charisma</li>
+          </ul>
+        </section>
+
+        <!-- SKILLS -->
+        <section class="section skills-section">
+          <h2 class="section-title">Skills</h2>
+          <ul class="save-skill-list skills-list">
+            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-athletics">+10</span> Athletics <span class="skill-ability">(STR)</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-acrobatics">+0</span> Acrobatics <span class="skill-ability">(DEX)</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-sleight">+0</span> Sleight of Hand <span class="skill-ability">(DEX)</span> <span class="expertise-badge">×2</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-stealth">+0</span> Stealth <span class="skill-ability">(DEX)</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-arcana">-1</span> Arcana <span class="skill-ability">(INT)</span> <span class="expertise-badge">×2</span> <span class="adv-badge">ADV</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-history">-1</span> History <span class="skill-ability">(INT)</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-investigation">-1</span> Investigation <span class="skill-ability">(INT)</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-nature">-1</span> Nature <span class="skill-ability">(INT)</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-religion">-1</span> Religion <span class="skill-ability">(INT)</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-animal">+2</span> Animal Handling <span class="skill-ability">(WIS)</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-insight">+2</span> Insight <span class="skill-ability">(WIS)</span> <span class="expertise-badge">×2</span> <span class="adv-badge">ADV</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-medicine">+2</span> Medicine <span class="skill-ability">(WIS)</span></li>
+            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-perception">+8</span> Perception <span class="skill-ability">(WIS)</span> <span class="disadv-badge">DISADV*</span></li>
+            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-survival">+8</span> Survival <span class="skill-ability">(WIS)</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-deception">+1</span> Deception <span class="skill-ability">(CHA)</span> <span class="expertise-badge">×2</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-intimidation">+1</span> Intimidation <span class="skill-ability">(CHA)</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-performance">+1</span> Performance <span class="skill-ability">(CHA)</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-persuasion">+1</span> Persuasion <span class="skill-ability">(CHA)</span></li>
+          </ul>
+          <p class="footnote">* Perception: Disadvantage when hammer is stationary (see Combat Features)</p>
+          <div class="passive-block">
+            <span class="field-label">Passive Perception</span>
+            <span id="passive-perception" class="passive-val">18</span>
+            <span class="field-label ml-auto">Passive Insight</span>
+            <span id="passive-insight" class="passive-val">22</span>
+          </div>
+        </section>
+
+        <!-- TOOLS & LANGUAGES -->
+        <section class="section tools-lang-section">
+          <h2 class="section-title">Languages &amp; Tools</h2>
+          <div class="two-col-list">
+            <div>
+              <strong>Languages:</strong>
+              <ul>
+                <li>Common</li>
+                <li>Nidavellrian</li>
+                <li>Yotun (Giant)</li>
+              </ul>
+            </div>
+            <div>
+              <strong>Tool Proficiencies:</strong>
+              <ul>
+                <li>Brewer's Supplies</li>
+                <li>Smith's Tools <span class="expertise-badge">×2 Prof</span></li>
+              </ul>
+            </div>
+          </div>
+          <div class="stonecunning-note">
+            <strong>Stonecunning:</strong> Double prof on INT (History) checks related to stonework origin.
+          </div>
+        </section>
+
+      </div><!-- end col-left -->
+
+      <!-- ─── CENTER COLUMN ─── -->
+      <div class="col-center">
+
+        <!-- COMBAT STATS ROW 1 -->
+        <section class="section combat-top">
+          <div class="combat-stat-box">
+            <div class="big-stat" id="ac-display">18</div>
+            <div class="field-label">Armor Class</div>
+            <div class="sub-note">Plate Armor</div>
+          </div>
+          <div class="combat-stat-box">
+            <div class="big-stat" id="initiative-display">+0</div>
+            <div class="field-label">Initiative</div>
+          </div>
+          <div class="combat-stat-box">
+            <div class="big-stat" contenteditable="true" data-key="speed">25</div>
+            <div class="field-label">Speed (ft)</div>
+            <div class="sub-note">Dwarf base 25</div>
+          </div>
+        </section>
+
+        <!-- HIT POINTS -->
+        <section class="section hp-section">
+          <div class="hp-row">
+            <div class="hp-block">
+              <div class="field-label">Current HP</div>
+              <input class="hp-input" type="number" data-key="current_hp" value="304" />
+            </div>
+            <div class="hp-block">
+              <div class="field-label">Max HP</div>
+              <input class="hp-input" type="number" data-key="max_hp" value="304" />
+              <div class="sub-note">Includes Tough feat &amp; Rockman Toughness</div>
+            </div>
+            <div class="hp-block">
+              <div class="field-label">Temp HP</div>
+              <input class="hp-input" type="number" data-key="temp_hp" value="0" />
+            </div>
+          </div>
+          <div class="hp-breakdown no-print">
+            <span class="field-label">HP Formula: </span>
+            <span id="hp-formula">Fighter d10 per level + CON mod per level + Tough (+40) + Rockman Toughness (+20)</span>
+          </div>
+          <div class="hit-dice-row">
+            <div class="field-label">Hit Dice</div>
+            <input class="small-text" type="text" data-key="hit_dice" value="20d10" />
+            <div class="field-label ml2">Used</div>
+            <input class="small-num" type="number" data-key="hit_dice_used" value="0" min="0" max="30" />
+          </div>
+        </section>
+
+        <!-- DEATH SAVES -->
+        <section class="section death-saves-section">
+          <h2 class="section-title">Death Saves</h2>
+          <div class="death-saves-row">
+            <span class="field-label">Successes:</span>
+            <input type="checkbox" data-key="ds1" /><input type="checkbox" data-key="ds2" /><input type="checkbox" data-key="ds3" />
+            <span class="field-label ml2">Failures:</span>
+            <input type="checkbox" data-key="df1" /><input type="checkbox" data-key="df2" /><input type="checkbox" data-key="df3" />
+          </div>
+        </section>
+
+        <!-- ATTACKS & WEAPONS -->
+        <section class="section weapons-section">
+          <h2 class="section-title">Attacks &amp; Weapons</h2>
+          <table class="weapons-table">
+            <thead>
+              <tr><th>Weapon</th><th>To Hit</th><th>Damage / Type</th><th>Notes</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Dwarven Thrower</strong><br/><em>(+3 Warhammer)</em></td>
+                <td id="thrower-hit">+15</td>
+                <td>1d8+9 bludg<br/>Thrown: 3d8+9<br/>vs Giant: 5d8+9</td>
+                <td>Thrown 20/60 ft · Returns end of turn · GWM: −5/+10 opt · Versatile 1d10</td>
+              </tr>
+              <tr>
+                <td><strong>Halberd</strong><br/><em>(Polearm)</em></td>
+                <td id="halberd-hit">+12</td>
+                <td>1d10+6 slash<br/>Butt end: 1d4+6</td>
+                <td>Reach 10 ft · GWM: −5/+10 opt · Polearm Master BA attack · Giant's Might +1d10</td>
+              </tr>
+              <tr>
+                <td><strong>Battle Axe</strong></td>
+                <td id="axe-hit">+12</td>
+                <td>1d8+6 slash<br/>Versatile: 1d10+6</td>
+                <td>GWM: −5/+10 opt</td>
+              </tr>
+              <tr>
+                <td><strong>Dwarven Thrower</strong><br/><em>(GWM active)</em></td>
+                <td id="thrower-gwm-hit">+10</td>
+                <td>1d8+19 bludg<br/>Thrown: 3d8+19</td>
+                <td>-5 to hit / +10 damage · GWM applied</td>
+              </tr>
+            </tbody>
+          </table>
+          <p class="footnote">Belt of Giant Strength (Frost Giant): STR becomes 23 (+6). Checkbox at top enables belt bonus. With belt: melee to-hit +15, damage +6.</p>
+          <p class="footnote">Archery Fighting Style: +2 to ranged attack rolls (already included in Thrown column).</p>
+          <p class="footnote">Giant's Might: Deals extra 1d10 on ONE attack per activation. Action Surge: 1/rest extra action.</p>
+        </section>
+
+        <!-- XP & LEVEL TRACKER -->
+        <section class="section xp-section">
+          <h2 class="section-title">⚔ Beyond Level 20 — XP &amp; Multiclass Tracker</h2>
+          <div class="xp-row">
+            <div class="xp-input-block">
+              <label class="field-label">Current XP</label>
+              <input type="number" id="xp-input" data-key="current_xp" value="355000" oninput="updateXP()" />
+            </div>
+            <div class="xp-next-block">
+              <label class="field-label">XP to Next Level</label>
+              <span id="xp-needed" class="xp-needed">355,000 more (710,000 total)</span>
+            </div>
+          </div>
+          <div class="xp-bar-container">
+            <div class="xp-bar-fill" id="xp-bar" style="width:50%"></div>
+          </div>
+          <div class="xp-label-row">
+            <span id="xp-current-label">355,000</span>
+            <span id="xp-level-label">Level 20 → 21</span>
+            <span id="xp-max-label">710,000</span>
+          </div>
+          <div class="level-threshold-table">
+            <h3 class="sub-section-title">XP Thresholds (Beyond 20)</h3>
+            <table class="threshold-table">
+              <thead><tr><th>Level</th><th>XP Required</th><th>Prof Bonus</th><th>Reached</th></tr></thead>
+              <tbody id="threshold-tbody">
+                <tr><td>20</td><td>355,000</td><td>+6</td><td id="reached-20">✓</td></tr>
+                <tr><td>21</td><td>710,000</td><td>+7</td><td id="reached-21">—</td></tr>
+                <tr><td>22</td><td>1,420,000</td><td>+7</td><td id="reached-22">—</td></tr>
+                <tr><td>23</td><td>2,840,000</td><td>+7</td><td id="reached-23">—</td></tr>
+                <tr><td>24</td><td>5,680,000</td><td>+7</td><td id="reached-24">—</td></tr>
+                <tr><td>25</td><td>11,360,000</td><td>+8</td><td id="reached-25">—</td></tr>
+                <tr><td>26</td><td>22,720,000</td><td>+8</td><td id="reached-26">—</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- MULTICLASS TRACKER -->
+        <section class="section multiclass-section">
+          <h2 class="section-title">Multiclass Breakdown</h2>
+          <div id="multiclass-rows">
+            <div class="mc-row">
+              <input class="mc-class-name" type="text" placeholder="Class name" value="Fighter (Rune Knight)" data-mc-key="mc_class_0" oninput="recalcAll()" />
+              <input class="mc-level-num" type="number" value="20" min="0" max="40" data-mc-key="mc_level_0" oninput="recalcAll()" />
+              <span class="mc-label">levels</span>
+              <button class="mc-remove no-print" onclick="removeMCRow(this)">✕</button>
+            </div>
+          </div>
+          <button class="btn-small no-print" onclick="addMCRow()">+ Add Multiclass</button>
+          <div class="mc-total-row">
+            Total Character Level: <strong id="mc-total">20</strong> &nbsp;|&nbsp; Prof Bonus: <strong id="mc-prof">+6</strong>
+          </div>
+        </section>
+
+        <!-- LEVEL UP LOG -->
+        <section class="section levelup-log-section">
+          <h2 class="section-title">Level Up Log</h2>
+          <div id="levelup-entries">
+            <div class="levelup-entry">
+              <span class="levelup-num">Lv 20</span>
+              <span class="levelup-text" contenteditable="true" data-key="log_20">Master of Runes — Full Rune Knight features unlocked. Prof +6. Reached current power cap.</span>
+            </div>
+          </div>
+          <button class="btn-small no-print" onclick="addLevelLogEntry()">+ Log Next Level</button>
+        </section>
+
+      </div><!-- end col-center -->
+
+      <!-- ─── RIGHT COLUMN ─── -->
+      <div class="col-right">
+
+        <!-- SENSES -->
+        <section class="section senses-section">
+          <h2 class="section-title">Senses</h2>
+          <ul class="feature-list">
+            <li><strong>Darkvision:</strong> 60 ft (Rockman racial)</li>
+            <li><strong>Darkvision:</strong> 120 ft (Stone Rune — invokable)</li>
+            <li><strong>Passive Perception:</strong> <span id="senses-perception">18</span></li>
+            <li><strong>Passive Insight:</strong> <span id="senses-insight">22</span></li>
+            <li><em>⚠ Disadvantage on Perception checks when Dwarven Thrower is stationary.</em></li>
+            <li><strong>Cannot be Surprised</strong> (Storm Rune — while active)</li>
+          </ul>
+        </section>
+
+        <!-- RESISTANCES & IMMUNITIES -->
+        <section class="section resistances-section">
+          <h2 class="section-title">Resistances &amp; Immunities</h2>
+          <ul class="feature-list">
+            <li><span class="badge badge-resist">RESIST</span> Non-magical Piercing damage</li>
+            <li><span class="badge badge-resist">RESIST</span> Non-magical Slashing damage</li>
+            <li><span class="badge badge-resist">RESIST</span> Poison damage (Rockman Resilience)</li>
+            <li><span class="badge badge-immune">IMMUNE</span> Disease (Gold Blood)</li>
+            <li><span class="badge badge-immune">IMMUNE</span> Natural Aging (Gold Blood)</li>
+            <li><span class="badge badge-adv">ADV</span> Saving Throws vs. Poison (Rockman Resilience)</li>
+          </ul>
+        </section>
+
+        <!-- FEATS -->
+        <section class="section feats-section">
+          <h2 class="section-title">Feats</h2>
+          <div class="feat-grid">
+            <div class="feat-card">
+              <div class="feat-name">Sentinel</div>
+              <div class="feat-desc">Opportunity attacks stop movement. Can attack creatures that attack others. Creatures can't disengage past you.</div>
+            </div>
+            <div class="feat-card">
+              <div class="feat-name">Polearm Master</div>
+              <div class="feat-desc">Bonus action attack (1d4+STR) with butt end. Opportunity attacks when creatures enter reach.</div>
+            </div>
+            <div class="feat-card">
+              <div class="feat-name">Great Weapon Master</div>
+              <div class="feat-desc">On crit or kill, bonus action attack. Choose −5 to hit for +10 damage.</div>
+            </div>
+            <div class="feat-card">
+              <div class="feat-name">Sharpshooter</div>
+              <div class="feat-desc">No disadv at long range. Ignore half/3/4 cover. −5 to hit for +10 damage (ranged).</div>
+            </div>
+            <div class="feat-card">
+              <div class="feat-name">Resilient</div>
+              <div class="feat-desc">+1 to chosen ability. Gain proficiency in that ability's saving throw.</div>
+            </div>
+            <div class="feat-card">
+              <div class="feat-name">Tough</div>
+              <div class="feat-desc">HP max increases by 2 per level (+40 at Lv 20). Stacks with Rockman Toughness.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- EQUIPMENT -->
+        <section class="section equipment-section">
+          <h2 class="section-title">Equipment &amp; Magic Items</h2>
+          <ul class="feature-list">
+            <li><strong>Plate Armor</strong> — AC 18</li>
+            <li><strong>Belt of Giant Strength (Frost Giant)</strong> — STR becomes 23</li>
+            <li><strong>Dwarven Thrower (+3)</strong> — Magic warhammer; thrown (20/60 ft); returns end of turn; +2d8 bludg (dwarf); +4d8 vs giants</li>
+            <li><strong>Halberd</strong> — Polearm, 1d10 slashing, reach 10 ft</li>
+            <li><strong>Battle Axe</strong> — 1d8 slashing, versatile 1d10</li>
+            <li><strong>Magical Horn</strong> — Calls a Valkyrie to fight alongside you. After the battle, you must immediately fight the Valkyrie.</li>
+          </ul>
+        </section>
+
+      </div><!-- end col-right -->
+    </div><!-- end sheet-body -->
+
+    <!-- ═══════════════════════ FULL-WIDTH FEATURES ═══════════════════════ -->
+    <div class="sheet-full-width">
+
+      <!-- RUNE KNIGHT FEATURES -->
+      <section class="section rune-section">
+        <h2 class="section-title">⚒ Rune Knight Features (Fighter 3+)</h2>
+        <div class="rune-header-row">
+          <div class="rune-stat-box">
+            <span class="rune-dc-value" id="rune-dc-display">20</span>
+            <span class="field-label">Rune Save DC</span>
+            <span class="sub-note">8 + Prof (+6) + CON Mod (+6)</span>
+          </div>
+          <div class="rune-stat-box">
+            <span class="rune-dc-value" id="giants-might-uses">6</span>
+            <span class="field-label">Giant's Might Uses/LR</span>
+            <span class="sub-note">= Proficiency Bonus</span>
+          </div>
+          <div class="giants-might-tracker no-print">
+            <span class="field-label">Uses Remaining:</span>
+            <input type="number" data-key="giants_might_remaining" value="6" min="0" max="12" id="giants-might-remaining" />
+            <button class="btn-tiny" onclick="spendGiantsMight()">Use</button>
+            <button class="btn-tiny" onclick="restoreGiantsMight()">LR</button>
+          </div>
+        </div>
+
+        <div class="rune-grid">
+          <div class="rune-card">
+            <div class="rune-name fire">🔥 Fire Rune</div>
+            <div class="rune-body">
+              <strong>Inscribing:</strong> Weapon or armor. Lasts until used.<br/>
+              <strong>Activate (reaction on hit):</strong> Target makes DC 20 STR save or is restrained. Takes 2d6 fire at start of each turn. Repeats save each turn. Lasts 1 min or until freed (STR DC 20).<br/>
+              <span class="passive-tag">Passive: Double proficiency on Artisan's Tools checks.</span>
+            </div>
+          </div>
+          <div class="rune-card">
+            <div class="rune-name stone">🪨 Stone Rune</div>
+            <div class="rune-body">
+              <strong>Inscribing:</strong> Weapon or armor. Lasts until used.<br/>
+              <strong>Activate (reaction, 30 ft):</strong> Target makes DC 20 WIS save or falls charmed for 1 min (incapacitated, speed 0). Repeats save each turn. No harm to end. Recharges after short/long rest.<br/>
+              <span class="passive-tag">Passive: Darkvision 120 ft.</span>
+            </div>
+          </div>
+          <div class="rune-card">
+            <div class="rune-name hill">⛰ Hill Rune</div>
+            <div class="rune-body">
+              <strong>Inscribing:</strong> Weapon or armor. Lasts until used.<br/>
+              <strong>Activate (bonus action):</strong> Resistance to bludgeoning, piercing, and slashing damage for 1 minute. Recharges after short/long rest.<br/>
+              <span class="passive-tag">Passive: Advantage on STR checks and saves against being moved or knocked prone.</span>
+            </div>
+          </div>
+          <div class="rune-card">
+            <div class="rune-name cloud">☁ Cloud Rune</div>
+            <div class="rune-body">
+              <strong>Inscribing:</strong> Weapon or armor. Lasts until used.<br/>
+              <strong>Activate (reaction, hit redirected):</strong> When you or a creature you can see within 30 ft is hit, redirect the attack to another creature within 30 ft (DM's call on validity). Recharges after short/long rest.<br/>
+              <span class="passive-tag">Passive: Double proficiency on Sleight of Hand and Deception checks.</span>
+            </div>
+          </div>
+          <div class="rune-card">
+            <div class="rune-name storm">⚡ Storm Rune</div>
+            <div class="rune-body">
+              <strong>Inscribing:</strong> Weapon or armor. Lasts until used.<br/>
+              <strong>Activate (bonus action):</strong> Enter prophetic state for 1 min: can't be surprised, advantage on attack rolls/ability checks/saving throws if you roll &lt;10 (use 10 instead). Recharges after short/long rest.<br/>
+              <span class="passive-tag">Passive: Advantage on Arcana checks.</span>
+            </div>
+          </div>
+          <div class="rune-card">
+            <div class="rune-name runic-shield">🛡 Runic Shield</div>
+            <div class="rune-body">
+              <strong>Reaction:</strong> When another creature you can see within 60 ft is hit, force the attacker to reroll the attack. Use the lower roll.<br/>
+              Uses: <input type="number" class="inline-num" data-key="runic_shield_uses" value="3" min="0" max="20" /> / Recharges after long rest.
+            </div>
+          </div>
+        </div>
+
+        <div class="giants-might-block">
+          <h3 class="sub-section-title">⚡ Giant's Might</h3>
+          <p><strong>Activation:</strong> Bonus action. Duration: 1 minute.</p>
+          <ul class="feature-list">
+            <li>Your size becomes <strong>Large</strong> (if space allows).</li>
+            <li><strong>Advantage</strong> on Strength checks and Strength saving throws.</li>
+            <li>Add <strong>1d10</strong> to ONE weapon attack damage per turn.</li>
+            <li>Your reach increases by <strong>5 ft</strong>.</li>
+            <li><strong>Uses per Long Rest:</strong> Equal to Proficiency Bonus (<span id="gm-uses-text">6</span> at current level).</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- RACIAL TRAITS -->
+      <section class="section racial-section">
+        <h2 class="section-title">⛏ Rockman (Dwarf) Racial Traits</h2>
+        <div class="racial-grid">
+          <div class="racial-block">
+            <strong>Rockman Toughness</strong>
+            <p>HP maximum increases by 1, and increases by 1 every time you gain a level. (+<span id="toughness-total">20</span> HP at current level)</p>
+          </div>
+          <div class="racial-block">
+            <strong>Rockman Resilience</strong>
+            <p>Advantage on saving throws against poison. Resistance against poison damage.</p>
+          </div>
+          <div class="racial-block">
+            <strong>Stonecunning</strong>
+            <p>INT (History) checks related to the origin of stonework: treated as proficient, add double Proficiency Bonus instead of normal Proficiency Bonus.</p>
+          </div>
+          <div class="racial-block">
+            <strong>Gold Blood</strong>
+            <p>Immune to disease. Does not age naturally.</p>
+          </div>
+          <div class="racial-block">
+            <strong>Darkvision (Racial)</strong>
+            <p>Can see in dim light as bright light, and in darkness as dim light, to a distance of 60 feet (120 ft via Stone Rune passive).</p>
+          </div>
+          <div class="racial-block">
+            <strong>Numa (20 Points)</strong>
+            <p>Mystical life-force. Current points tracked above. Can push CON above 22 for one round using Numa. Current: <strong id="numa-display">20</strong> / 20.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- SPECIAL COMBAT FEATURES -->
+      <section class="section combat-features-section">
+        <h2 class="section-title">⚔ Special Combat Features &amp; Abilities</h2>
+        <div class="feature-two-col">
+          <div>
+            <h3 class="sub-section-title">Fighter Features</h3>
+            <ul class="feature-list">
+              <li><strong>Fighting Style — Archery:</strong> +2 to ranged attack rolls.</li>
+              <li><strong>Second Wind:</strong> Bonus action, regain 1d10 + Fighter level HP. 1/short or long rest.</li>
+              <li><strong>Action Surge (2/rest):</strong> Take one additional action on your turn.</li>
+              <li><strong>Indomitable (3/long rest):</strong> Reroll a failed saving throw, must use new roll.</li>
+              <li><strong>Extra Attack (4):</strong> Attack 4 times when taking the Attack action.</li>
+            </ul>
+            <h3 class="sub-section-title">Advantage &amp; Special Rolls</h3>
+            <ul class="feature-list">
+              <li><span class="adv-badge">ADV</span> <strong>Insight</strong> (WIS) checks</li>
+              <li><span class="adv-badge">ADV</span> <strong>Arcana</strong> (INT) checks</li>
+              <li><span class="adv-badge">ADV</span> STR checks &amp; saves when <strong>Giant's Might</strong> active</li>
+              <li><span class="adv-badge">ADV</span> STR checks &amp; saves <strong>Hill Rune</strong> passive (vs. forced movement &amp; prone)</li>
+              <li><span class="disadv-badge">DISADV</span> <strong>Perception</strong> checks when Dwarven Thrower is stationary</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="sub-section-title">Special Equipment &amp; Magic</h3>
+            <ul class="feature-list">
+              <li><strong>Magical Horn (Valkyrie Call):</strong>
+                <ul>
+                  <li>Activate to summon a Valkyrie to fight alongside you in battle.</li>
+                  <li><em>Consequence: After the battle ends, you must immediately fight the Valkyrie.</em></li>
+                </ul>
+              </li>
+              <li><strong>Numa — CON Push:</strong> Spend Numa to push CON above 22 for one round. Effect: CON exceeds normal cap of 22, boosting CON modifier, HP temp, concentration saves, etc.</li>
+            </ul>
+            <h3 class="sub-section-title">Expertise (Double Proficiency)</h3>
+            <ul class="feature-list">
+              <li><span class="expertise-badge">×2</span> <strong>Smith's Tools</strong> (via Rune Knight / Stonecunning)</li>
+              <li><span class="expertise-badge">×2</span> <strong>Sleight of Hand</strong> (DEX)</li>
+              <li><span class="expertise-badge">×2</span> <strong>Deception</strong> (CHA)</li>
+              <li><span class="expertise-badge">×2</span> <strong>Insight</strong> (WIS) + Advantage</li>
+              <li><span class="expertise-badge">×2</span> <strong>Arcana</strong> (INT) + Advantage</li>
+              <li><span class="expertise-badge">×2</span> <strong>History</strong> (INT) for stonework origin checks</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- NOTES -->
+      <section class="section notes-section">
+        <h2 class="section-title">📜 Notes &amp; Session Log</h2>
+        <textarea class="notes-area" data-key="notes" placeholder="Session notes, DM rulings, spell slots, NPC info..."></textarea>
+      </section>
+
+    </div><!-- end sheet-full-width -->
+
+    <footer class="sheet-footer">
+      <span>Thrain (Kreb-Smasher) Ironhammerson · Rockman · Fighter (Rune Knight) · Lawful Good</span>
+      <span id="footer-date" class="footer-date"></span>
+    </footer>
+
+  </div><!-- end #character-sheet -->
+</body>
+</html>
