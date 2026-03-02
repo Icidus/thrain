@@ -526,6 +526,405 @@ function doLongRest() {
 }
 
 // ─────────────────────────────────────────────────────────────
+// BATTLE TRACKER
+// ─────────────────────────────────────────────────────────────
+
+let btState = {
+  active: false, round: 1,
+  actionUsed: false, bonusUsed: false, reactionUsed: false, moveUsed: false,
+  attacksThisTurn: 0, gmDiceUsed: false,
+  log: [], currentRoundLog: [],
+};
+
+function btStartCombat() {
+  btState = {
+    active: true, round: 1,
+    actionUsed: false, bonusUsed: false, reactionUsed: false, moveUsed: false,
+    attacksThisTurn: 0, gmDiceUsed: false,
+    log: [], currentRoundLog: [],
+  };
+  const tracker = document.getElementById('battle-tracker');
+  const startBtn = document.getElementById('btn-start-combat');
+  if (tracker) tracker.style.display = 'block';
+  if (startBtn) startBtn.textContent = '✕ Close Tracker';
+  if (startBtn) startBtn.onclick = btEndCombat;
+  btRender();
+  btShowResult(null);
+  tracker?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function btEndCombat() {
+  btState.active = false;
+  const tracker = document.getElementById('battle-tracker');
+  const startBtn = document.getElementById('btn-start-combat');
+  if (tracker) tracker.style.display = 'none';
+  if (startBtn) { startBtn.textContent = '⚔ Start Combat'; startBtn.onclick = btStartCombat; }
+}
+
+function btNextRound() {
+  if (btState.currentRoundLog.length > 0) {
+    btState.log.push({ round: btState.round, entries: [...btState.currentRoundLog] });
+  }
+  btState.round++;
+  btState.actionUsed = false;
+  btState.bonusUsed = false;
+  btState.reactionUsed = false;
+  btState.moveUsed = false;
+  btState.attacksThisTurn = 0;
+  btState.gmDiceUsed = false;
+  btState.currentRoundLog = [];
+  btRender();
+  btShowResult(`<div class="bt-result-new-round">⚔ Round ${btState.round} — your turn begins!</div>`);
+}
+
+function btToggleSlot(slot) {
+  if (slot === 'action')   btState.actionUsed   = !btState.actionUsed;
+  if (slot === 'bonus')    btState.bonusUsed    = !btState.bonusUsed;
+  if (slot === 'reaction') btState.reactionUsed = !btState.reactionUsed;
+  if (slot === 'move')     btState.moveUsed     = !btState.moveUsed;
+  btRender();
+}
+
+function btRender() {
+  setText('bt-round-num', btState.round);
+  setText('bt-atk-count', btState.attacksThisTurn);
+  btUpdateSlot('bt-action-slot',   btState.actionUsed);
+  btUpdateSlot('bt-bonus-slot',    btState.bonusUsed);
+  btUpdateSlot('bt-reaction-slot', btState.reactionUsed);
+  btUpdateSlot('bt-move-slot',     btState.moveUsed);
+  btRenderLog();
+}
+
+function btUpdateSlot(id, used) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.toggle('bt-slot-used', used);
+  const lbl = el.querySelector('.bt-eco-label');
+  if (lbl) {
+    const name = lbl.textContent.split('\n')[0].split(' ')[0];
+    // keep original label but show used state via CSS
+  }
+}
+
+function btAddLog(text, type) {
+  btState.currentRoundLog.push({ text, type });
+  btRenderLog();
+}
+
+function btRenderLog() {
+  const container = document.getElementById('bt-round-log');
+  if (!container) return;
+  let html = '';
+  btState.log.forEach(r => {
+    html += `<div class="bt-log-round"><strong>Rd ${r.round}:</strong> ${r.entries.map(e =>
+      `<span class="bt-log-tag bt-log-${e.type}">${e.text}</span>`).join(' ')}</div>`;
+  });
+  if (btState.currentRoundLog.length > 0) {
+    html += `<div class="bt-log-round bt-log-current"><strong>Rd ${btState.round} (now):</strong> ${
+      btState.currentRoundLog.map(e => `<span class="bt-log-tag bt-log-${e.type}">${e.text}</span>`).join(' ')}</div>`;
+  }
+  container.innerHTML = html || '<em class="bt-empty-hint">Nothing logged yet.</em>';
+}
+
+function btShowResult(html) {
+  const el = document.getElementById('bt-result');
+  if (el) el.innerHTML = html ?? '<em class="bt-empty-hint">Click an action to see roll details.</em>';
+}
+
+/** Collect live stats for battle tracker calculations */
+function btGetStats() {
+  const beltCheck = document.getElementById('bt-belt-bt')?.checked
+                 || document.getElementById('belt-active')?.checked;
+  const gmA  = document.getElementById('bt-gm-active')?.checked;
+  const vsG  = document.getElementById('bt-vs-giant')?.checked;
+  const gwm  = document.getElementById('bt-gwm')?.checked;
+  const ss   = document.getElementById('bt-ss')?.checked;
+  const rawStr = getNum('stat_str', 18);
+  const rawWis = getNum('stat_wis', 14);
+  const rawCon = getNum('stat_con', 22);
+  const effStr = beltCheck ? Math.max(rawStr, BELT_STR) : rawStr;
+  const mStr = mod(effStr);
+  const mDex = mod(getNum('stat_dex', 10));
+  const mWis = mod(rawWis);
+  const mCon = mod(rawCon);
+  const totalLevel = calcTotalLevel();
+  const prof = profBonusForLevel(totalLevel);
+  const runeDC = 8 + prof + mCon;
+  return { mStr, mDex, mWis, mCon, totalLevel, prof, runeDC, gmA, vsG, gwm, ss };
+}
+
+/** Render an attack result card */
+function btAttack(weapon) {
+  // If action was used for something non-attack, block
+  const alreadyAttacking = btState.currentRoundLog.some(e => e.type === 'attack');
+  if (btState.actionUsed && !alreadyAttacking) {
+    btShowResult(`<div class="bt-result-warn">⚠ You already used your Action this round for something else.</div>`); return;
+  }
+  if (btState.attacksThisTurn >= 4) {
+    btShowResult(`<div class="bt-result-warn">⚠ All 4 attacks used this turn.</div>`); return;
+  }
+
+  const s = btGetStats();
+  const magic = DWARVEN_THROWER_BONUS; // +3
+
+  if (!btState.actionUsed) { btState.actionUsed = true; }
+  btState.attacksThisTurn++;
+
+  let hitBonus, damageDice, damageBonus, notes = [], weaponLabel;
+
+  if (weapon === 'thrown') {
+    weaponLabel = 'Dwarven Thrower (Thrown)';
+    hitBonus = s.mStr + s.prof + magic + ARCHERY_STYLE_BONUS;
+    damageBonus = s.mStr + magic;
+    if (s.ss) { hitBonus -= 5; damageBonus += 10; notes.push('Sharpshooter −5/+10'); }
+    damageDice = s.vsG ? '3d8' : '2d8';
+    if (s.vsG) notes.push('vs Giant +1d8');
+    notes.push('bludgeoning · returns end of turn');
+  } else if (weapon === 'melee') {
+    weaponLabel = 'Dwarven Thrower (Melee)';
+    hitBonus = s.mStr + s.prof + magic;
+    damageBonus = s.mStr + magic;
+    if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5/+10'); }
+    damageDice = '1d8';
+    notes.push('bludgeoning · Versatile 1d10');
+  } else if (weapon === 'halberd') {
+    weaponLabel = 'Halberd';
+    hitBonus = s.mStr + s.prof;
+    damageBonus = s.mStr;
+    if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5/+10'); }
+    damageDice = '1d10';
+    notes.push('slashing · Reach 10 ft');
+  } else {
+    weaponLabel = 'Battle Axe';
+    hitBonus = s.mStr + s.prof;
+    damageBonus = s.mStr;
+    if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5/+10'); }
+    damageDice = '1d8';
+    notes.push('slashing · Versatile 1d10');
+  }
+
+  // Giant's Might 1d10 bonus — only first attack per turn
+  let gmExtra = '';
+  if (s.gmA && !btState.gmDiceUsed) {
+    gmExtra = ' + 1d10'; btState.gmDiceUsed = true; notes.push("Giant's Might 1d10 (first attack only)");
+  }
+
+  const atkNum = btState.attacksThisTurn;
+  const remaining = 4 - atkNum;
+  btAddLog(`Atk ${atkNum}:${weaponLabel.split('(')[0].trim()}`, 'attack');
+  btRender();
+
+  btShowResult(`
+    <div class="bt-result-card">
+      <div class="bt-result-head">&#9876; Attack ${atkNum} of 4 — ${weaponLabel}</div>
+      <div class="bt-result-dice-row">
+        <div class="bt-dice-block bt-hit-block">
+          <div class="bt-dice-label">To Hit — roll d20 then add:</div>
+          <div class="bt-dice-value">1d20 <span class="bt-bonus">${fmtMod(hitBonus)}</span></div>
+        </div>
+        <div class="bt-dice-arrow">&#10132;</div>
+        <div class="bt-dice-block bt-dmg-block">
+          <div class="bt-dice-label">On hit — damage:</div>
+          <div class="bt-dice-value">${damageDice}${gmExtra} <span class="bt-bonus">${fmtMod(damageBonus)}</span></div>
+        </div>
+      </div>
+      ${notes.length ? `<div class="bt-result-notes">${notes.join(' &middot; ')}</div>` : ''}
+      ${remaining > 0
+        ? `<div class="bt-result-hint">${remaining} attack${remaining > 1 ? 's' : ''} remaining — click again to continue</div>`
+        : `<div class="bt-result-hint bt-hint-done">&#9889; All 4 attacks used this turn!</div>`}
+    </div>
+  `);
+}
+
+/** Handle bonus/reaction abilities */
+function btUse(ability) {
+  const s = btGetStats();
+  let html = '';
+
+  const needsBonus    = ['giants_might','second_wind','pam_bonus','gwm_bonus','hill_rune','storm_rune'];
+  const needsReaction = ['fire_rune','cloud_rune','stone_rune','runic_shield','indomitable','sentinel_oa'];
+
+  if (needsBonus.includes(ability) && btState.bonusUsed) {
+    btShowResult('<div class="bt-result-warn">⚠ Bonus action already used this round.</div>'); return;
+  }
+  if (needsReaction.includes(ability) && btState.reactionUsed) {
+    btShowResult('<div class="bt-result-warn">⚠ Reaction already used this round.</div>'); return;
+  }
+
+  if (needsBonus.includes(ability))    { btState.bonusUsed    = true; }
+  if (needsReaction.includes(ability)) { btState.reactionUsed = true; }
+
+  switch (ability) {
+    case 'giants_might': {
+      const uses = getNum('giants_might_remaining', 0);
+      if (uses <= 0) { btShowResult('<div class="bt-result-warn">⚠ No Giant\'s Might uses remaining.</div>'); return; }
+      document.getElementById('bt-gm-active').checked = true;
+      btAddLog("Giant's Might (BA)", 'bonus');
+      html = `<div class="bt-result-card bt-card-bonus">
+        <div class="bt-result-head">&#9889; Giant's Might (Bonus Action)</div>
+        <ul class="bt-result-list">
+          <li>Size becomes <strong>Large</strong> (if space allows)</li>
+          <li><strong>Advantage</strong> on STR checks &amp; saves</li>
+          <li>Add <strong>1d10</strong> to first attack damage this turn</li>
+          <li>Reach increases +5 ft · Duration: 1 minute</li>
+        </ul>
+        <div class="bt-result-notes">&#9998; Mark one use in Giant's Might tracker &middot; ${uses - 1} remaining</div>
+      </div>`;
+      break;
+    }
+    case 'second_wind': {
+      btAddLog('Second Wind (BA)', 'bonus');
+      html = `<div class="bt-result-card bt-card-bonus">
+        <div class="bt-result-head">&#128168; Second Wind (Bonus Action)</div>
+        <div class="bt-result-dice-row">
+          <div class="bt-dice-block bt-dmg-block">
+            <div class="bt-dice-label">Heal:</div>
+            <div class="bt-dice-value">1d10 <span class="bt-bonus">+${s.totalLevel}</span></div>
+          </div>
+        </div>
+        <div class="bt-result-notes">&#9998; Check Second Wind box in Combat Resources</div>
+      </div>`;
+      break;
+    }
+    case 'pam_bonus': {
+      const hit = s.mStr + s.prof;
+      btAddLog('PAM Butt Attack (BA)', 'bonus');
+      html = `<div class="bt-result-card bt-card-bonus">
+        <div class="bt-result-head">&#9906; Polearm Master Butt Attack (Bonus Action)</div>
+        <div class="bt-result-dice-row">
+          <div class="bt-dice-block bt-hit-block"><div class="bt-dice-label">To Hit:</div><div class="bt-dice-value">1d20 <span class="bt-bonus">${fmtMod(hit)}</span></div></div>
+          <div class="bt-dice-arrow">&#10132;</div>
+          <div class="bt-dice-block bt-dmg-block"><div class="bt-dice-label">Damage:</div><div class="bt-dice-value">1d4 <span class="bt-bonus">${fmtMod(s.mStr)}</span> bludg</div></div>
+        </div>
+      </div>`;
+      break;
+    }
+    case 'gwm_bonus': {
+      const hit = s.mStr + s.prof + DWARVEN_THROWER_BONUS;
+      const dmg = s.mStr + DWARVEN_THROWER_BONUS;
+      btAddLog('GWM Bonus Atk (BA)', 'bonus');
+      html = `<div class="bt-result-card bt-card-bonus">
+        <div class="bt-result-head">&#128481; GWM Bonus Attack (Bonus Action — after crit or kill)</div>
+        <div class="bt-result-dice-row">
+          <div class="bt-dice-block bt-hit-block"><div class="bt-dice-label">To Hit:</div><div class="bt-dice-value">1d20 <span class="bt-bonus">${fmtMod(hit)}</span></div></div>
+          <div class="bt-dice-arrow">&#10132;</div>
+          <div class="bt-dice-block bt-dmg-block"><div class="bt-dice-label">Damage:</div><div class="bt-dice-value">1d8 <span class="bt-bonus">${fmtMod(dmg)}</span> bludg</div></div>
+        </div>
+      </div>`;
+      break;
+    }
+    case 'hill_rune': {
+      btAddLog('Hill Rune (BA)', 'bonus');
+      html = `<div class="bt-result-card bt-card-bonus">
+        <div class="bt-result-head">&#9968; Hill Rune (Bonus Action)</div>
+        <ul class="bt-result-list">
+          <li>Resistance to <strong>Bludgeoning, Piercing &amp; Slashing</strong></li>
+          <li>Duration: 1 minute</li>
+        </ul>
+        <div class="bt-result-notes">&#9998; Mark Hill Rune use in Rune section</div>
+      </div>`;
+      break;
+    }
+    case 'storm_rune': {
+      btAddLog('Storm Rune (BA)', 'bonus');
+      html = `<div class="bt-result-card bt-card-bonus">
+        <div class="bt-result-head">&#9889; Storm Rune (Bonus Action)</div>
+        <ul class="bt-result-list">
+          <li>Cannot be <strong>surprised</strong></li>
+          <li>Treat any roll below 10 as a 10 (attacks, ability checks, saves)</li>
+          <li>Duration: 1 minute</li>
+        </ul>
+        <div class="bt-result-notes">&#9998; Mark Storm Rune use in Rune section</div>
+      </div>`;
+      break;
+    }
+    case 'fire_rune': {
+      btAddLog('Fire Rune (React)', 'reaction');
+      html = `<div class="bt-result-card bt-card-reaction">
+        <div class="bt-result-head">&#128293; Fire Rune (Reaction — triggers on a hit)</div>
+        <ul class="bt-result-list">
+          <li>Target: DC <strong>${s.runeDC}</strong> STR save or <strong>Restrained</strong></li>
+          <li>Restrained: takes <strong>2d6 fire</strong> at start of each turn</li>
+          <li>Repeats STR save each turn to escape</li>
+        </ul>
+        <div class="bt-result-notes">&#9998; Mark Fire Rune use in Rune section</div>
+      </div>`;
+      break;
+    }
+    case 'cloud_rune': {
+      btAddLog('Cloud Rune (React)', 'reaction');
+      html = `<div class="bt-result-card bt-card-reaction">
+        <div class="bt-result-head">&#9729; Cloud Rune (Reaction)</div>
+        <ul class="bt-result-list">
+          <li>Redirect a hit targeting you or ally (within 30 ft)</li>
+          <li>Pick another creature within 30 ft — attacker uses same roll vs new AC</li>
+        </ul>
+        <div class="bt-result-notes">&#9998; Mark Cloud Rune use in Rune section</div>
+      </div>`;
+      break;
+    }
+    case 'stone_rune': {
+      btAddLog('Stone Rune (React)', 'reaction');
+      html = `<div class="bt-result-card bt-card-reaction">
+        <div class="bt-result-head">&#129704; Stone Rune (Reaction — 30 ft)</div>
+        <ul class="bt-result-list">
+          <li>Target: DC <strong>${s.runeDC}</strong> WIS save or <strong>Charmed</strong></li>
+          <li>Charmed: incapacitated, speed 0</li>
+          <li>Repeats WIS save each turn to escape</li>
+        </ul>
+        <div class="bt-result-notes">&#9998; Mark Stone Rune use in Rune section</div>
+      </div>`;
+      break;
+    }
+    case 'runic_shield': {
+      const uses = getNum('runic_shield_uses', 0);
+      if (uses <= 0) { btShowResult('<div class="bt-result-warn">⚠ No Runic Shield uses remaining.</div>'); return; }
+      btAddLog('Runic Shield (React)', 'reaction');
+      html = `<div class="bt-result-card bt-card-reaction">
+        <div class="bt-result-head">&#128737; Runic Shield (Reaction — 60 ft)</div>
+        <ul class="bt-result-list">
+          <li>Force attacker to <strong>reroll</strong> their attack roll</li>
+          <li>Attacker must use the <strong>lower</strong> of the two rolls</li>
+        </ul>
+        <div class="bt-result-notes">&#9998; Mark one Runic Shield use &middot; ${uses - 1} remaining</div>
+      </div>`;
+      break;
+    }
+    case 'indomitable': {
+      btAddLog('Indomitable (React)', 'reaction');
+      html = `<div class="bt-result-card bt-card-reaction">
+        <div class="bt-result-head">&#128170; Indomitable (no-action — after failing a save)</div>
+        <ul class="bt-result-list">
+          <li>Reroll a failed saving throw</li>
+          <li>You <strong>must</strong> use the new roll</li>
+        </ul>
+        <div class="bt-result-notes">&#9998; Mark Indomitable use in Combat Resources</div>
+      </div>`;
+      break;
+    }
+    case 'sentinel_oa': {
+      const hit = s.mStr + s.prof + DWARVEN_THROWER_BONUS;
+      const dmg = s.mStr + DWARVEN_THROWER_BONUS;
+      btAddLog('Sentinel OA (React)', 'reaction');
+      html = `<div class="bt-result-card bt-card-reaction">
+        <div class="bt-result-head">&#128737; Sentinel Opportunity Attack (Reaction)</div>
+        <div class="bt-result-dice-row">
+          <div class="bt-dice-block bt-hit-block"><div class="bt-dice-label">To Hit:</div><div class="bt-dice-value">1d20 <span class="bt-bonus">${fmtMod(hit)}</span></div></div>
+          <div class="bt-dice-arrow">&#10132;</div>
+          <div class="bt-dice-block bt-dmg-block"><div class="bt-dice-label">Damage:</div><div class="bt-dice-value">1d8 <span class="bt-bonus">${fmtMod(dmg)}</span></div></div>
+        </div>
+        <div class="bt-result-notes">Target's speed becomes 0 until end of their turn (Sentinel)</div>
+      </div>`;
+      break;
+    }
+  }
+
+  btRender();
+  if (html) btShowResult(html);
+}
+
+
+// ─────────────────────────────────────────────────────────────
 // JOURNAL XP SYSTEM
 // ─────────────────────────────────────────────────────────────
 

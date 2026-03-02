@@ -105,7 +105,101 @@
         <div class="qr-value" id="qr-hp">304</div>
         <div class="qr-label">Max HP</div>
       </div>
+      <div class="qr-spacer"></div>
+      <div class="qr-combat-zone no-print">
+        <button id="btn-start-combat" class="btn-combat-start" onclick="btStartCombat()">&#9876; Start Combat</button>
+      </div>
     </div>
+
+    <!-- ═══════════════ BATTLE TRACKER PANEL ═══════════════ -->
+    <div id="battle-tracker" class="battle-tracker no-print" style="display:none">
+
+      <!-- Header row -->
+      <div class="bt-header">
+        <div class="bt-title">&#9876; Battle Tracker</div>
+        <div class="bt-round-badge">Round&nbsp;<span id="bt-round-num">1</span></div>
+
+        <!-- Action Economy -->
+        <div class="bt-economy">
+          <div class="bt-eco-slot" id="bt-action-slot" onclick="btToggleSlot('action')" title="Click to toggle">
+            <div class="bt-eco-icon">&#9876;</div>
+            <div class="bt-eco-label">Action</div>
+          </div>
+          <div class="bt-eco-slot" id="bt-bonus-slot" onclick="btToggleSlot('bonus')" title="Click to toggle">
+            <div class="bt-eco-icon">&#9889;</div>
+            <div class="bt-eco-label">Bonus</div>
+          </div>
+          <div class="bt-eco-slot" id="bt-reaction-slot" onclick="btToggleSlot('reaction')" title="Click to toggle">
+            <div class="bt-eco-icon">&#128737;</div>
+            <div class="bt-eco-label">Reaction</div>
+          </div>
+          <div class="bt-eco-slot" id="bt-move-slot" onclick="btToggleSlot('move')" title="Click to toggle">
+            <div class="bt-eco-icon">&#128099;</div>
+            <div class="bt-eco-label">Move (25 ft)</div>
+          </div>
+        </div>
+
+        <div class="bt-header-btns">
+          <button class="btn-bt-next" onclick="btNextRound()">Next Round &#8594;</button>
+          <button class="btn-bt-end" onclick="btEndCombat()">&#10005; End Combat</button>
+        </div>
+      </div><!-- /bt-header -->
+
+      <!-- Options bar -->
+      <div class="bt-options-bar">
+        <span class="bt-options-label">Modifiers:</span>
+        <label class="bt-opt"><input type="checkbox" id="bt-gm-active"> Giant&apos;s Might active</label>
+        <label class="bt-opt"><input type="checkbox" id="bt-vs-giant"> Target is Giant</label>
+        <label class="bt-opt"><input type="checkbox" id="bt-gwm"> GWM (&minus;5/+10)</label>
+        <label class="bt-opt"><input type="checkbox" id="bt-ss"> Sharpshooter (&minus;5/+10)</label>
+        <label class="bt-opt"><input type="checkbox" id="bt-belt-bt"> Belt of Giant Str</label>
+      </div>
+
+      <!-- Four columns: Actions / Bonus / Reactions / Result -->
+      <div class="bt-columns">
+
+        <!-- ACTIONS -->
+        <div class="bt-col">
+          <div class="bt-col-header action-hdr">&#9876; Action</div>
+          <div class="bt-atk-counter">Attacks used: <strong id="bt-atk-count">0</strong> / 4 &nbsp;<span class="bt-atk-note">(1 base + 3 Extra Attack)</span></div>
+          <button class="bt-btn bt-action" onclick="btAttack('thrown')">&#128505; Dwarven Thrower &mdash; Thrown</button>
+          <button class="bt-btn bt-action" onclick="btAttack('melee')">&#9876; Dwarven Thrower &mdash; Melee</button>
+          <button class="bt-btn bt-action" onclick="btAttack('halberd')">&#9906; Halberd</button>
+          <button class="bt-btn bt-action" onclick="btAttack('axe')">&#129683; Battle Axe</button>
+        </div>
+
+        <!-- BONUS ACTIONS -->
+        <div class="bt-col">
+          <div class="bt-col-header bonus-hdr">&#9889; Bonus Action</div>
+          <button class="bt-btn bt-bonus" onclick="btUse('giants_might')">&#9889; Giant&apos;s Might</button>
+          <button class="bt-btn bt-bonus" onclick="btUse('second_wind')">&#128168; Second Wind</button>
+          <button class="bt-btn bt-bonus" onclick="btUse('pam_bonus')">&#9906; PAM Butt Attack</button>
+          <button class="bt-btn bt-bonus" onclick="btUse('gwm_bonus')">&#128481; GWM Bonus Atk <span class="bt-tag">after crit/kill</span></button>
+          <button class="bt-btn bt-bonus" onclick="btUse('hill_rune')">&#9968; Hill Rune</button>
+          <button class="bt-btn bt-bonus" onclick="btUse('storm_rune')">&#9889; Storm Rune</button>
+        </div>
+
+        <!-- REACTIONS -->
+        <div class="bt-col">
+          <div class="bt-col-header reaction-hdr">&#8629; Reaction</div>
+          <button class="bt-btn bt-reaction" onclick="btUse('fire_rune')">&#128293; Fire Rune <span class="bt-tag">on hit</span></button>
+          <button class="bt-btn bt-reaction" onclick="btUse('cloud_rune')">&#9729; Cloud Rune</button>
+          <button class="bt-btn bt-reaction" onclick="btUse('stone_rune')">&#129704; Stone Rune</button>
+          <button class="bt-btn bt-reaction" onclick="btUse('runic_shield')">&#128737; Runic Shield</button>
+          <button class="bt-btn bt-reaction" onclick="btUse('indomitable')">&#128170; Indomitable</button>
+          <button class="bt-btn bt-reaction" onclick="btUse('sentinel_oa')">&#128737; Sentinel OA</button>
+        </div>
+
+        <!-- RESULT + LOG -->
+        <div class="bt-col bt-col-result">
+          <div class="bt-col-header result-hdr">&#127922; Result</div>
+          <div id="bt-result" class="bt-result-area"><em class="bt-empty-hint">Click an action to see roll details.</em></div>
+          <div class="bt-col-header result-hdr" style="margin-top:0.6rem">&#128221; Round Log</div>
+          <div id="bt-round-log" class="bt-log-area"></div>
+        </div>
+
+      </div><!-- /bt-columns -->
+    </div><!-- /battle-tracker -->
 
     <!-- ═══════════════════════ BODY ═══════════════════════ -->
     <div class="sheet-body">
@@ -323,8 +417,8 @@
             <tbody>
               <tr class="res-row">
                 <td class="res-label">Extra Attack</td>
-                <td class="res-tracker"><span class="res-big">4×</span></td>
-                <td class="res-note">per Attack action (Fighter Lv 20)</td>
+                <td class="res-tracker"><span class="res-big">×4</span></td>
+                <td class="res-note">1 base attack + 3 Extra Attacks = <strong>4 total</strong> per Attack action</td>
                 <td class="res-rest-cell"></td>
               </tr>
               <tr class="res-row">
