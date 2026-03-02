@@ -520,101 +520,118 @@ function saveSheet(silent = false) {
     const data = collectData();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     if (!silent) flashStatus('✓ Saved!', 'success');
+    // Also save to Firebase cloud if signed in
+    if (window.scheduleSaveToCloud) window.scheduleSaveToCloud(data);
   } catch (e) {
     flashStatus('✗ Save failed', 'error');
     console.error('Save failed:', e);
   }
 }
 
+/** Apply a data object to the DOM — used by both loadSheet() and Firebase sync. */
+function applySheetData(data) {
+  if (!data) return;
+
+  // Restore standard fields
+  Object.entries(data).forEach(([key, val]) => {
+    if (key.startsWith('_')) return; // handled separately
+
+    // contenteditable
+    const ceEl = document.querySelector(`[data-key="${key}"][contenteditable]`);
+    if (ceEl) { ceEl.textContent = val; return; }
+
+    // input
+    const inputEl = document.querySelector(`[data-key="${key}"]:not([contenteditable])`);
+    if (inputEl) {
+      if (inputEl.type === 'checkbox') inputEl.checked = !!val;
+      else inputEl.value = val;
+    }
+
+    // textarea
+    const taEl = document.querySelector(`textarea[data-key="${key}"]`);
+    if (taEl) taEl.value = val;
+  });
+
+  // Belt checkbox
+  if (data['belt_active'] !== undefined) {
+    const belt = document.getElementById('belt-active');
+    if (belt) belt.checked = !!data['belt_active'];
+  }
+
+  // Restore multiclass rows
+  if (Array.isArray(data['_multiclass_rows']) && data['_multiclass_rows'].length > 0) {
+    const container = document.getElementById('multiclass-rows');
+    if (container) {
+      container.innerHTML = '';
+      mcRowCount = 0;
+      data['_multiclass_rows'].forEach((row, idx) => {
+        const div = document.createElement('div');
+        div.className = 'mc-row';
+        div.innerHTML = `
+          <input class="mc-class-name" type="text" placeholder="Class name" value="${escapeHtml(row.name || '')}" data-mc-key="mc_class_${idx}" oninput="recalcAll(); saveSheet(true);" />
+          <input class="mc-level-num" type="number" value="${row.level || 0}" min="0" max="40" data-mc-key="mc_level_${idx}" oninput="recalcAll(); saveSheet(true);" />
+          <span class="mc-label">levels</span>
+          ${idx === 0 ? '' : `<button class="mc-remove no-print" onclick="removeMCRow(this)">✕</button>`}
+        `;
+        container.appendChild(div);
+        mcRowCount++;
+      });
+    }
+  }
+
+  // Restore level log
+  if (Array.isArray(data['_level_log']) && data['_level_log'].length > 0) {
+    const container = document.getElementById('levelup-entries');
+    if (container) {
+      container.innerHTML = '';
+      data['_level_log'].forEach(({ level, text }) => {
+        const entry = document.createElement('div');
+        entry.className = 'levelup-entry';
+        const levelLv = parseInt(level.replace('Lv ', ''), 10) || 0;
+        entry.innerHTML = `
+          <span class="levelup-num">${escapeHtml(level)}</span>
+          <span class="levelup-text" contenteditable="true" data-key="log_${levelLv}">${escapeHtml(text)}</span>
+        `;
+        const textEl = entry.querySelector('.levelup-text');
+        if (textEl) textEl.addEventListener('blur', () => saveSheet(true));
+        container.appendChild(entry);
+      });
+    }
+  }
+
+  // Sync XP input
+  if (data['current_xp']) {
+    const xpInput = document.getElementById('xp-input');
+    if (xpInput) xpInput.value = data['current_xp'];
+  }
+
+  // Equipment
+  if (Array.isArray(data['_equipment']) && data['_equipment'].length > 0) {
+    equipmentItems = data['_equipment'];
+  } else {
+    equipmentItems = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
+  }
+  renderEquipment();
+
+  // Recalculate all derived stats after applying new data
+  recalcAll();
+  updateXP();
+}
+
+// Expose applySheetData globally so firebase.js can call it after cloud load/sync
+window.applySheetData = applySheetData;
+
 /** Load sheet from localStorage. */
 function loadSheet() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return; // no saved data — use HTML defaults
-
-    const data = JSON.parse(raw);
-
-    // Restore standard fields
-    Object.entries(data).forEach(([key, val]) => {
-      if (key.startsWith('_')) return; // handled separately
-
-      // contenteditable
-      const ceEl = document.querySelector(`[data-key="${key}"][contenteditable]`);
-      if (ceEl) { ceEl.textContent = val; return; }
-
-      // input
-      const inputEl = document.querySelector(`[data-key="${key}"]:not([contenteditable])`);
-      if (inputEl) {
-        if (inputEl.type === 'checkbox') inputEl.checked = !!val;
-        else inputEl.value = val;
-      }
-
-      // textarea
-      const taEl = document.querySelector(`textarea[data-key="${key}"]`);
-      if (taEl) taEl.value = val;
-    });
-
-    // Belt checkbox
-    if (data['belt_active'] !== undefined) {
-      const belt = document.getElementById('belt-active');
-      if (belt) belt.checked = !!data['belt_active'];
-    }
-
-    // Restore multiclass rows
-    if (Array.isArray(data['_multiclass_rows']) && data['_multiclass_rows'].length > 0) {
-      const container = document.getElementById('multiclass-rows');
-      if (container) {
-        container.innerHTML = '';
-        mcRowCount = 0;
-        data['_multiclass_rows'].forEach((row, idx) => {
-          const div = document.createElement('div');
-          div.className = 'mc-row';
-          div.innerHTML = `
-            <input class="mc-class-name" type="text" placeholder="Class name" value="${escapeHtml(row.name || '')}" data-mc-key="mc_class_${idx}" oninput="recalcAll(); saveSheet(true);" />
-            <input class="mc-level-num" type="number" value="${row.level || 0}" min="0" max="40" data-mc-key="mc_level_${idx}" oninput="recalcAll(); saveSheet(true);" />
-            <span class="mc-label">levels</span>
-            ${idx === 0 ? '' : `<button class="mc-remove no-print" onclick="removeMCRow(this)">✕</button>`}
-          `;
-          container.appendChild(div);
-          mcRowCount++;
-        });
-      }
-    }
-
-    // Restore level log
-    if (Array.isArray(data['_level_log']) && data['_level_log'].length > 0) {
-      const container = document.getElementById('levelup-entries');
-      if (container) {
-        container.innerHTML = '';
-        data['_level_log'].forEach(({ level, text }) => {
-          const entry = document.createElement('div');
-          entry.className = 'levelup-entry';
-          const levelLv = parseInt(level.replace('Lv ', ''), 10) || 0;
-          entry.innerHTML = `
-            <span class="levelup-num">${escapeHtml(level)}</span>
-            <span class="levelup-text" contenteditable="true" data-key="log_${levelLv}">${escapeHtml(text)}</span>
-          `;
-          const textEl = entry.querySelector('.levelup-text');
-          if (textEl) textEl.addEventListener('blur', () => saveSheet(true));
-          container.appendChild(entry);
-        });
-      }
-    }
-
-    // Sync XP input
-    if (data['current_xp']) {
-      const xpInput = document.getElementById('xp-input');
-      if (xpInput) xpInput.value = data['current_xp'];
-    }
-
-    // Equipment
-    if (Array.isArray(data['_equipment']) && data['_equipment'].length > 0) {
-      equipmentItems = data['_equipment'];
-    } else {
+    if (!raw) {
+      // No local data — render default equipment at minimum
       equipmentItems = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
+      renderEquipment();
+      return;
     }
-    renderEquipment();
-
+    applySheetData(JSON.parse(raw));
   } catch (e) {
     console.error('Load failed:', e);
     equipmentItems = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
