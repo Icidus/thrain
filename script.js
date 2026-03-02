@@ -81,8 +81,21 @@ const DEFAULT_LANGUAGES = [
 ];
 
 const DEFAULT_TOOLS = [
-  { id: 'to1', name: "Brewer's Supplies", note: 'Proficient' },
-  { id: 'to2', name: "Smith's Tools",     note: '×2 Proficiency (Rune Knight)' },
+  { id: 'to1', name: "Brewer's Supplies", note: 'Proficient', subitems: [
+    { id: 'to1s1', name: 'Large Kettle',        have: true,  note: '' },
+    { id: 'to1s2', name: 'Mash Tun',            have: true,  note: '' },
+    { id: 'to1s3', name: 'Fermentation Vessel', have: true,  note: '' },
+    { id: 'to1s4', name: 'Hops',                have: false, note: 'ingredient' },
+    { id: 'to1s5', name: 'Malt',                have: false, note: 'ingredient' },
+    { id: 'to1s6', name: 'Yeast',               have: false, note: 'ingredient' },
+  ]},
+  { id: 'to2', name: "Smith's Tools", note: '×2 Proficiency (Rune Knight)', subitems: [
+    { id: 'to2s1', name: 'Hammer',       have: true, note: '' },
+    { id: 'to2s2', name: 'Tongs',        have: true, note: '' },
+    { id: 'to2s3', name: 'Bellows',      have: true, note: '' },
+    { id: 'to2s4', name: 'Anvil',        have: true, note: '' },
+    { id: 'to2s5', name: 'Quench Bucket',have: true, note: '' },
+  ]},
 ];
 
 const DEFAULT_FEATS = [
@@ -1080,6 +1093,24 @@ function updateJournalPreview() {
   const jxp = calcJournalXP(currentXP);
   const el = document.getElementById('journal-xp-value');
   if (el) el.textContent = jxp.toLocaleString() + ' XP';
+  // Show the correct gap description
+  const levels = Object.keys(XP_THRESHOLDS).map(Number).sort((a, b) => a - b);
+  let curLv = 20;
+  for (const lv of levels) {
+    if (currentXP >= XP_THRESHOLDS[lv]) curLv = lv;
+  }
+  const nxtLv = curLv + 1;
+  const nxtThresh = XP_THRESHOLDS[nxtLv];
+  const curThresh = XP_THRESHOLDS[curLv];
+  const gapLabel = document.getElementById('journal-xp-gap-label');
+  if (gapLabel) {
+    if (nxtThresh) {
+      const gap = nxtThresh - curThresh;
+      gapLabel.textContent = `— 10% of the ${gap.toLocaleString()} XP gap (Lv ${curLv} → ${nxtLv})`;
+    } else {
+      gapLabel.textContent = '— max level reached';
+    }
+  }
 }
 
 function renderJournalEntries() {
@@ -1700,24 +1731,87 @@ function renderTools() {
   if (!ul) return;
   ul.innerHTML = '';
   toolItems.forEach(item => {
+    const subs = item.subitems || [];
+    const hasOwned = subs.filter(s => s.have).length;
     const li = document.createElement('li');
-    li.className = 'dyn-list-item';
+    li.className = 'dyn-list-item tool-list-item';
     li.dataset.id = item.id;
     li.innerHTML = `
-      <span class="dyn-item-name" contenteditable="true"
-        onblur="updateDynItem(toolItems, '${item.id}', 'name', this); saveSheet(true);">${escapeHtml(item.name)}</span>
-      ${item.note ? `<span class="dyn-item-note"> — ${escapeHtml(item.note)}</span>` : ''}
-      <button class="dyn-delete no-print" onclick="deleteDynItem('tool', '${item.id}')" title="Remove">\u00d7</button>
+      <div class="tool-main-row">
+        <span class="dyn-item-name" contenteditable="true"
+          onblur="updateDynItem(toolItems, '${item.id}', 'name', this); saveSheet(true);">${escapeHtml(item.name)}</span>
+        ${item.note ? `<span class="dyn-item-note">${escapeHtml(item.note)}</span>` : ''}
+        <button class="tool-subitems-toggle no-print" onclick="toggleToolSubItems('${item.id}')"
+          title="Show/hide sub-items">&#9660; <span class="tool-sub-count">${hasOwned}/${subs.length}</span></button>
+        <button class="btn-add-inline no-print" onclick="addToolSubItem('${item.id}')" title="Add sub-item">+</button>
+        <button class="dyn-delete no-print" onclick="deleteDynItem('tool', '${item.id}')" title="Remove">&times;</button>
+      </div>
+      ${subs.length > 0 ? `
+      <ul class="tool-subitems-list" id="tool-subs-${item.id}">
+        ${subs.map(sub => `
+        <li class="tool-subitem" data-sub-id="${sub.id}">
+          <label class="tool-sub-check">
+            <input type="checkbox" ${sub.have ? 'checked' : ''}
+              onchange="updateToolSubHave('${item.id}','${sub.id}',this.checked)">
+            <span class="dyn-item-name tool-sub-name" contenteditable="true"
+              onblur="updateToolSubName('${item.id}','${sub.id}',this);">${escapeHtml(sub.name)}</span>
+            ${sub.note ? `<span class="dyn-item-note">${escapeHtml(sub.note)}</span>` : ''}
+          </label>
+          <button class="dyn-delete no-print" onclick="deleteToolSubItem('${item.id}','${sub.id}')" title="Remove">&times;</button>
+        </li>`).join('')}
+      </ul>` : ''}
     `;
     ul.appendChild(li);
   });
+}
+
+function toggleToolSubItems(toolId) {
+  const ul = document.getElementById('tool-subs-' + toolId);
+  if (ul) ul.classList.toggle('tool-subs-hidden');
+}
+
+function addToolSubItem(toolId) {
+  const name = prompt('Sub-item name (e.g. Hops, Hammer):');
+  if (!name?.trim()) return;
+  const note = prompt('Note (optional — e.g. ingredient, qty):', '') || '';
+  const tool = toolItems.find(t => t.id === toolId);
+  if (!tool) return;
+  if (!tool.subitems) tool.subitems = [];
+  tool.subitems.push({ id: 'ts' + Date.now(), name: name.trim(), have: true, note: note.trim() });
+  renderTools();
+  saveSheet(true);
+}
+
+function deleteToolSubItem(toolId, subId) {
+  const tool = toolItems.find(t => t.id === toolId);
+  if (!tool?.subitems) return;
+  tool.subitems = tool.subitems.filter(s => s.id !== subId);
+  renderTools();
+  saveSheet(true);
+}
+
+function updateToolSubHave(toolId, subId, checked) {
+  const tool = toolItems.find(t => t.id === toolId);
+  const sub = tool?.subitems?.find(s => s.id === subId);
+  if (sub) { sub.have = checked; saveSheet(true); }
+  // Refresh just the count badge without full re-render
+  const toggle = document.querySelector(`[data-id="${toolId}"] .tool-sub-count`);
+  if (toggle && tool?.subitems) {
+    toggle.textContent = tool.subitems.filter(s => s.have).length + '/' + tool.subitems.length;
+  }
+}
+
+function updateToolSubName(toolId, subId, el) {
+  const tool = toolItems.find(t => t.id === toolId);
+  const sub = tool?.subitems?.find(s => s.id === subId);
+  if (sub) { sub.name = el.textContent.trim(); saveSheet(true); }
 }
 
 function addTool() {
   const name = prompt('New tool proficiency:');
   if (!name?.trim()) return;
   const note = prompt('Note (optional — e.g. ×2 Prof, Prof):', '') || '';
-  toolItems.push({ id: 'to' + Date.now(), name: name.trim(), note: note.trim() });
+  toolItems.push({ id: 'to' + Date.now(), name: name.trim(), note: note.trim(), subitems: [] });
   renderTools();
   saveSheet(true);
 }

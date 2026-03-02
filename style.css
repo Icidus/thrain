@@ -1474,6 +1474,72 @@ input[type="number"]:focus, input[type="text"]:focus { border-color: var(--gold-
 }
 .dyn-delete:hover { color: #c00; }
 
+/* ──────────────────── TOOL SUB-ITEMS ──────────────────── */
+.tool-list-item { flex-direction: column; align-items: stretch; }
+.tool-main-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  width: 100%;
+}
+.tool-subitems-toggle {
+  font-size: 0.65rem;
+  color: var(--rune-gold);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.tool-subitems-toggle:hover { color: var(--gold); }
+.btn-add-inline {
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: var(--rune-gold);
+  background: none;
+  border: 1px solid var(--rune-gold);
+  border-radius: 3px;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.btn-add-inline:hover { background: rgba(201, 168, 76, 0.15); }
+.tool-subitems-list {
+  list-style: none;
+  padding: 0.25rem 0 0.25rem 1.2rem;
+  margin: 0;
+  border-left: 2px solid rgba(201, 168, 76, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.tool-subitems-list.tool-subs-hidden { display: none; }
+.tool-subitem {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+}
+.tool-sub-check {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+}
+.tool-sub-check input[type="checkbox"] {
+  accent-color: var(--rune-gold);
+  flex-shrink: 0;
+}
+.tool-sub-name { font-size: 0.78rem; }
+.tool-sub-count {
+  font-size: 0.62rem;
+  opacity: 0.75;
+}
+
 /* ──────────────────── COMBAT RESOURCES TABLE ──────────────────── */
 .res-table {
   width: 100%;
