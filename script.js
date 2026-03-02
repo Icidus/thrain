@@ -923,6 +923,14 @@ function btUse(ability) {
   if (html) btShowResult(html);
 }
 
+// Explicitly expose battle-tracker functions to global scope for inline onclick handlers
+window.btStartCombat = btStartCombat;
+window.btEndCombat   = btEndCombat;
+window.btNextRound   = btNextRound;
+window.btToggleSlot  = btToggleSlot;
+window.btAttack      = btAttack;
+window.btUse         = btUse;
+
 
 // ─────────────────────────────────────────────────────────────
 // JOURNAL XP SYSTEM

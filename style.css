@@ -25,6 +25,7 @@
   --rune-cloud:      #4682b4;
   --rune-storm:      #7b2d8b;
   --rune-shield:     #1e5e5e;
+  --rune-gold:       #c9a84c;  /* alias used by quick-ref bar & battle tracker */
   --font-body:       'Georgia', serif;
   --font-ui:         'Segoe UI', system-ui, sans-serif;
   --radius:          6px;
@@ -478,7 +479,8 @@ body {
 
 /* ──────────────────── TOOLS & LANGUAGES ──────────────────── */
 .two-col-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.two-col-list ul { list-style: disc; padding-left: 14px; font-size: 0.8rem; line-height: 1.8; }
+.two-col-list > div { min-width: 0; overflow: hidden; }
+.two-col-list ul { list-style: none; padding-left: 0; font-size: 0.8rem; line-height: 1.8; }
 .two-col-list strong { font-size: 0.75rem; color: var(--iron); font-family: var(--font-ui); }
 .stonecunning-note { font-size: 0.72rem; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border); color: var(--ink-soft); line-height: 1.4; }
 
@@ -1353,13 +1355,20 @@ input[type="number"]:focus, input[type="text"]:focus { border-color: var(--gold-
   border-bottom: 1px solid rgba(184, 134, 11, 0.1);
   list-style: none;
   font-size: 0.82rem;
+  min-width: 0;
 }
 .dyn-item-name {
   flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   cursor: text;
   outline: none;
 }
 .dyn-item-name:focus {
+  white-space: normal;
+  overflow: visible;
   background: rgba(255, 255, 255, 0.5);
   border-radius: 3px;
   padding: 0 0.2rem;
