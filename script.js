@@ -52,15 +52,40 @@ const PROF_SKILLS_MAP = {
 let mcRowCount = 1;
 
 // ─────────────────────────────────────────────────────────────
+// DEFAULT EQUIPMENT
+// ─────────────────────────────────────────────────────────────
+
+const DEFAULT_EQUIPMENT = [
+  { id: 'e1',  cat: 'armor',     name: 'Plate Armor',                    desc: 'AC 18' },
+  { id: 'e2',  cat: 'armor',     name: 'Shield',                         desc: '+2 AC (if equipped)' },
+  { id: 'e3',  cat: 'magic',     name: 'Belt of Giant Strength (Frost Giant)', desc: 'STR becomes 23' },
+  { id: 'e4',  cat: 'weapon',    name: 'Dwarven Thrower (+3)',            desc: 'Magic warhammer; thrown (20/60 ft); returns end of turn; +2d8 bludg (dwarf); +4d8 vs giants' },
+  { id: 'e5',  cat: 'weapon',    name: 'Halberd',                        desc: 'Polearm, 1d10 slashing, reach 10 ft' },
+  { id: 'e6',  cat: 'weapon',    name: 'Battle Axe',                     desc: '1d8 slashing, versatile 1d10' },
+  { id: 'e7',  cat: 'magic',     name: 'Magical Horn',                   desc: 'Calls a Valkyrie to fight alongside you. After battle you must immediately fight the Valkyrie.' },
+  { id: 'e8',  cat: 'tool',      name: "Brewer's Kit",                   desc: "Full brewer's supplies — proficient" },
+  { id: 'e9',  cat: 'tool',      name: "Smith's Tools",                  desc: 'Double proficiency (Rune Knight feature)' },
+];
+
+/** In-memory equipment list — populated from localStorage or defaults */
+let equipmentItems = [];
+
+// ─────────────────────────────────────────────────────────────
 // INITIALIZATION
 // ─────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadSheet();
+  loadSheet(); // also calls renderEquipment internally
   recalcAll();
   updateXP();
   setFooterDate();
   hookAutoSave();
+
+  // Fallback: if loadSheet didn't render equipment (no saved data), render defaults
+  if (equipmentItems.length === 0) {
+    equipmentItems = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
+    renderEquipment();
+  }
 });
 
 /** Set the footer date stamp */
@@ -483,6 +508,9 @@ function collectData() {
   });
   data['_level_log'] = logEntries;
 
+  // Equipment
+  data['_equipment'] = equipmentItems;
+
   return data;
 }
 
@@ -579,8 +607,18 @@ function loadSheet() {
       if (xpInput) xpInput.value = data['current_xp'];
     }
 
+    // Equipment
+    if (Array.isArray(data['_equipment']) && data['_equipment'].length > 0) {
+      equipmentItems = data['_equipment'];
+    } else {
+      equipmentItems = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
+    }
+    renderEquipment();
+
   } catch (e) {
     console.error('Load failed:', e);
+    equipmentItems = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
+    renderEquipment();
   }
 }
 
@@ -664,4 +702,128 @@ function exportPDF() {
       alert('PDF export failed. Try Print → Save as PDF instead.');
       if (btn) { btn.textContent = '📄 Export PDF'; btn.disabled = false; }
     });
+}
+
+// ─────────────────────────────────────────────────────────────
+// EQUIPMENT SYSTEM
+// ─────────────────────────────────────────────────────────────
+
+/** Generate a simple unique ID for new equipment items */
+function equipId() {
+  return 'eq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+}
+
+/** Render all equipment items into the list */
+function renderEquipment() {
+  const list = document.getElementById('equip-list');
+  if (!list) return;
+  list.innerHTML = '';
+  equipmentItems.forEach(item => {
+    list.appendChild(buildEquipRow(item));
+  });
+  // Re-apply active filter
+  const activeTab = document.querySelector('.equip-tab.active');
+  if (activeTab) filterEquip(activeTab, activeTab.dataset.cat);
+}
+
+/** Build a single equipment list item element */
+function buildEquipRow(item) {
+  const li = document.createElement('li');
+  li.className = 'equip-item';
+  li.dataset.id = item.id;
+  li.dataset.cat = item.cat;
+
+  const catLabels = { armor: 'Armor', weapon: 'Weapon', magic: 'Magic', tool: 'Tool', consumable: 'Consumable', misc: 'Misc' };
+
+  li.innerHTML = `
+    <span class="equip-cat-badge">${catLabels[item.cat] || item.cat}</span>
+    <div class="equip-item-body">
+      <span class="equip-item-name" contenteditable="true" data-item-id="${item.id}" data-field="name">${escapeHtml(item.name)}</span><span class="equip-item-sep"> — </span><span class="equip-item-desc" contenteditable="true" data-item-id="${item.id}" data-field="desc">${escapeHtml(item.desc || '')}</span>
+    </div>
+    <button class="equip-delete no-print" title="Remove item" onclick="deleteEquipItem('${item.id}')">✕</button>
+  `;
+
+  // Save on blur of name or desc
+  li.querySelectorAll('[contenteditable]').forEach(el => {
+    el.addEventListener('blur', () => {
+      const id = el.dataset.itemId;
+      const field = el.dataset.field;
+      const entry = equipmentItems.find(i => i.id === id);
+      if (entry) {
+        entry[field] = el.textContent.trim();
+        saveSheet(true);
+      }
+    });
+    // Prevent newlines
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } });
+  });
+
+  return li;
+}
+
+/** Add a new equipment item from the form */
+function addEquipItem() {
+  const catEl   = document.getElementById('equip-new-cat');
+  const nameEl  = document.getElementById('equip-new-name');
+  const descEl  = document.getElementById('equip-new-desc');
+
+  const name = nameEl?.value.trim();
+  if (!name) {
+    nameEl?.focus();
+    nameEl?.classList.add('input-error');
+    setTimeout(() => nameEl?.classList.remove('input-error'), 1200);
+    return;
+  }
+
+  const newItem = {
+    id:   equipId(),
+    cat:  catEl?.value || 'misc',
+    name: name,
+    desc: descEl?.value.trim() || '',
+  };
+
+  equipmentItems.push(newItem);
+
+  const list = document.getElementById('equip-list');
+  if (list) list.appendChild(buildEquipRow(newItem));
+
+  // Re-apply filter so new item respects active tab
+  const activeTab = document.querySelector('.equip-tab.active');
+  if (activeTab) filterEquip(activeTab, activeTab.dataset.cat);
+
+  // Clear inputs
+  if (nameEl) nameEl.value = '';
+  if (descEl) descEl.value = '';
+  nameEl?.focus();
+
+  saveSheet(true);
+}
+
+/** Allow pressing Enter in the name field to add the item */
+document.addEventListener('DOMContentLoaded', () => {
+  const nameEl = document.getElementById('equip-new-name');
+  if (nameEl) nameEl.addEventListener('keydown', e => { if (e.key === 'Enter') addEquipItem(); });
+});
+
+/** Delete an equipment item by id */
+function deleteEquipItem(id) {
+  equipmentItems = equipmentItems.filter(i => i.id !== id);
+  const li = document.querySelector(`.equip-item[data-id="${id}"]`);
+  if (li) {
+    li.style.opacity = '0';
+    setTimeout(() => li.remove(), 180);
+  }
+  saveSheet(true);
+}
+
+/** Filter equipment by category tab */
+function filterEquip(btn, cat) {
+  // Update active tab
+  document.querySelectorAll('.equip-tab').forEach(t => t.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  // Show/hide items
+  document.querySelectorAll('.equip-item').forEach(li => {
+    li.classList.toggle('hidden', cat !== 'all' && li.dataset.cat !== cat);
+  });
 }

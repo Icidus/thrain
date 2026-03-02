@@ -663,6 +663,189 @@ body {
 .feature-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .feature-two-col .feature-list li { font-size: 0.78rem; }
 
+/* ──────────────────── EQUIPMENT SECTION ──────────────────── */
+.equip-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.equip-tab {
+  background: var(--parchment-dark);
+  border: 1px solid var(--border-solid);
+  border-radius: 3px 3px 0 0;
+  padding: 3px 9px;
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--iron);
+  transition: background 0.15s, color 0.15s;
+}
+
+.equip-tab:hover { background: var(--gold); color: #1a1a1a; }
+.equip-tab.active { background: var(--iron); color: var(--gold); border-color: var(--iron); }
+
+.equip-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 20px;
+}
+
+.equip-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 5px 6px;
+  border-radius: var(--radius);
+  background: var(--parchment-dark);
+  border-left: 3px solid var(--border-solid);
+  transition: opacity 0.2s;
+}
+
+.equip-item[data-cat="armor"]      { border-left-color: var(--blue-accent); }
+.equip-item[data-cat="weapon"]     { border-left-color: var(--red-accent); }
+.equip-item[data-cat="magic"]      { border-left-color: var(--rune-storm); }
+.equip-item[data-cat="tool"]       { border-left-color: var(--rune-hill); }
+.equip-item[data-cat="consumable"] { border-left-color: var(--gold-dark); }
+.equip-item[data-cat="misc"]       { border-left-color: var(--iron-light); }
+.equip-item.hidden { display: none; }
+
+.equip-cat-badge {
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+  font-size: 0.57rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+.equip-item[data-cat="armor"]      .equip-cat-badge { background: #d0e4f7; color: var(--blue-accent); }
+.equip-item[data-cat="weapon"]     .equip-cat-badge { background: #f7d0d0; color: var(--red-accent); }
+.equip-item[data-cat="magic"]      .equip-cat-badge { background: #ead5f5; color: var(--rune-storm); }
+.equip-item[data-cat="tool"]       .equip-cat-badge { background: #d5e8d0; color: var(--rune-hill); }
+.equip-item[data-cat="consumable"] .equip-cat-badge { background: #fdf0cc; color: var(--gold-dark); }
+.equip-item[data-cat="misc"]       .equip-cat-badge { background: #e8e8e8; color: var(--iron); }
+
+.equip-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.equip-item-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--ink);
+  outline: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+  display: inline-block;
+  min-width: 30px;
+}
+
+.equip-item-name:focus {
+  border-bottom-color: var(--gold);
+  background: rgba(201,168,76,0.12);
+  border-radius: 2px;
+}
+
+.equip-item-sep {
+  font-size: 0.72rem;
+  color: var(--iron-light);
+  margin: 0 3px;
+}
+
+.equip-item-desc {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  outline: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s;
+  display: inline;
+  min-width: 30px;
+}
+
+.equip-item-desc:focus {
+  border-bottom-color: var(--gold-dark);
+  background: rgba(201,168,76,0.08);
+  border-radius: 2px;
+}
+
+.equip-item-desc:empty::before {
+  content: 'Add description…';
+  color: var(--iron-light);
+  font-style: italic;
+  pointer-events: none;
+}
+
+.equip-delete {
+  background: none;
+  border: none;
+  color: var(--iron-light);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 0 2px;
+  flex-shrink: 0;
+  line-height: 1;
+  margin-top: 2px;
+  transition: color 0.15s;
+}
+.equip-delete:hover { color: var(--red-accent); }
+
+.equip-add-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+  flex-wrap: wrap;
+}
+
+.equip-cat-select {
+  border: 1px solid var(--border-solid);
+  border-radius: 3px;
+  padding: 3px 5px;
+  font-size: 0.75rem;
+  font-family: var(--font-ui);
+  background: white;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.equip-new-name {
+  border: 1px solid var(--border-solid);
+  border-radius: 3px;
+  padding: 3px 7px;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  width: 120px;
+  flex-shrink: 0;
+}
+
+.equip-new-desc {
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 3px 7px;
+  font-size: 0.78rem;
+  font-family: var(--font-body);
+  flex: 1;
+  min-width: 80px;
+}
+
+@media print {
+  .equip-delete { display: none !important; }
+  .equip-add-row { display: none !important; }
+  .equip-tabs { display: none !important; }
+  .equip-item.hidden { display: flex !important; } /* print all items regardless of filter */
+}
+
 /* ──────────────────── NOTES ──────────────────── */
 .notes-area {
   width: 100%;

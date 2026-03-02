@@ -429,14 +429,36 @@
         <!-- EQUIPMENT -->
         <section class="section equipment-section">
           <h2 class="section-title">Equipment &amp; Magic Items</h2>
-          <ul class="feature-list">
-            <li><strong>Plate Armor</strong> — AC 18</li>
-            <li><strong>Belt of Giant Strength (Frost Giant)</strong> — STR becomes 23</li>
-            <li><strong>Dwarven Thrower (+3)</strong> — Magic warhammer; thrown (20/60 ft); returns end of turn; +2d8 bludg (dwarf); +4d8 vs giants</li>
-            <li><strong>Halberd</strong> — Polearm, 1d10 slashing, reach 10 ft</li>
-            <li><strong>Battle Axe</strong> — 1d8 slashing, versatile 1d10</li>
-            <li><strong>Magical Horn</strong> — Calls a Valkyrie to fight alongside you. After the battle, you must immediately fight the Valkyrie.</li>
+
+          <!-- Category filter tabs -->
+          <div class="equip-tabs no-print">
+            <button class="equip-tab active" data-cat="all" onclick="filterEquip(this,'all')">All</button>
+            <button class="equip-tab" data-cat="armor" onclick="filterEquip(this,'armor')">Armor</button>
+            <button class="equip-tab" data-cat="weapon" onclick="filterEquip(this,'weapon')">Weapons</button>
+            <button class="equip-tab" data-cat="magic" onclick="filterEquip(this,'magic')">Magic</button>
+            <button class="equip-tab" data-cat="tool" onclick="filterEquip(this,'tool')">Tools</button>
+            <button class="equip-tab" data-cat="consumable" onclick="filterEquip(this,'consumable')">Consumables</button>
+            <button class="equip-tab" data-cat="misc" onclick="filterEquip(this,'misc')">Misc</button>
+          </div>
+
+          <ul class="equip-list" id="equip-list">
+            <!-- Items injected by JS -->
           </ul>
+
+          <!-- Add item form -->
+          <div class="equip-add-row no-print">
+            <select id="equip-new-cat" class="equip-cat-select">
+              <option value="armor">Armor</option>
+              <option value="weapon">Weapon</option>
+              <option value="magic" selected>Magic</option>
+              <option value="tool">Tool</option>
+              <option value="consumable">Consumable</option>
+              <option value="misc">Misc</option>
+            </select>
+            <input type="text" id="equip-new-name" placeholder="Item name" class="equip-new-name" />
+            <input type="text" id="equip-new-desc" placeholder="Description (optional)" class="equip-new-desc" />
+            <button class="btn-small" onclick="addEquipItem()">+ Add</button>
+          </div>
         </section>
 
       </div><!-- end col-right -->
