@@ -534,15 +534,26 @@ let btState = {
   actionUsed: false, bonusUsed: false, reactionUsed: false, moveUsed: false,
   attacksThisTurn: 0, gmDiceUsed: false,
   log: [], currentRoundLog: [],
+  undoStack: [],
+  moveLeft: 25, maxMove: 25,
 };
 
 function btStartCombat() {
+  // Read speed from sheet
+  const speedEl = document.querySelector('[data-key="speed"]');
+  const speed = speedEl ? (parseInt(speedEl.textContent) || 25) : 25;
   btState = {
     active: true, round: 1,
     actionUsed: false, bonusUsed: false, reactionUsed: false, moveUsed: false,
     attacksThisTurn: 0, gmDiceUsed: false,
     log: [], currentRoundLog: [],
+    undoStack: [],
+    moveLeft: speed, maxMove: speed,
   };
+  // Sync belt-active checkbox → bt-belt-bt
+  const beltMain = document.getElementById('belt-active');
+  const beltBt   = document.getElementById('bt-belt-bt');
+  if (beltMain && beltBt) beltBt.checked = beltMain.checked;
   const tracker = document.getElementById('battle-tracker');
   const startBtn = document.getElementById('btn-start-combat');
   if (tracker) tracker.style.display = 'block';
@@ -573,6 +584,8 @@ function btNextRound() {
   btState.attacksThisTurn = 0;
   btState.gmDiceUsed = false;
   btState.currentRoundLog = [];
+  btState.undoStack = [];
+  btState.moveLeft = btState.maxMove;
   btRender();
   btShowResult(`<div class="bt-result-new-round">⚔ Round ${btState.round} — your turn begins!</div>`);
 }
@@ -591,7 +604,10 @@ function btRender() {
   btUpdateSlot('bt-action-slot',   btState.actionUsed);
   btUpdateSlot('bt-bonus-slot',    btState.bonusUsed);
   btUpdateSlot('bt-reaction-slot', btState.reactionUsed);
-  btUpdateSlot('bt-move-slot',     btState.moveUsed);
+  btUpdateSlot('bt-move-slot',     btState.moveLeft <= 0);
+  // Update move slot label with remaining feet
+  const moveLbl = document.querySelector('#bt-move-slot .bt-eco-label');
+  if (moveLbl) moveLbl.textContent = `Move (${btState.moveLeft}/${btState.maxMove}ft)`;
   btRenderLog();
 }
 
@@ -607,8 +623,10 @@ function btUpdateSlot(id, used) {
 }
 
 function btAddLog(text, type) {
+  const idx = btState.currentRoundLog.length;
   btState.currentRoundLog.push({ text, type });
   btRenderLog();
+  return idx;
 }
 
 function btRenderLog() {
@@ -616,14 +634,17 @@ function btRenderLog() {
   if (!container) return;
   let html = '';
   btState.log.forEach(r => {
-    html += `<div class="bt-log-round"><strong>Rd ${r.round}:</strong> ${r.entries.map(e =>
-      `<span class="bt-log-tag bt-log-${e.type}">${e.text}</span>`).join(' ')}</div>`;
+    const tags = r.entries.map(e =>
+      `<span class="bt-log-tag bt-log-${e.type}">${e.text}</span>`).join(' ');
+    html += `<div class="bt-log-round"><strong>Rd ${r.round}:</strong> ${tags}</div>`;
   });
   if (btState.currentRoundLog.length > 0) {
-    html += `<div class="bt-log-round bt-log-current"><strong>Rd ${btState.round} (now):</strong> ${
-      btState.currentRoundLog.map(e => `<span class="bt-log-tag bt-log-${e.type}">${e.text}</span>`).join(' ')}</div>`;
+    const tags = btState.currentRoundLog.map(e =>
+      `<span class="bt-log-tag bt-log-${e.type}">${e.text}</span>`).join(' ');
+    html += `<div class="bt-log-round bt-log-current"><strong>Rd ${btState.round}:</strong> ${tags}</div>`;
   }
   container.innerHTML = html || '<em class="bt-empty-hint">Nothing logged yet.</em>';
+  container.scrollTop = container.scrollHeight;
 }
 
 function btShowResult(html) {
@@ -653,87 +674,181 @@ function btGetStats() {
   return { mStr, mDex, mWis, mCon, totalLevel, prof, runeDC, gmA, vsG, gwm, ss };
 }
 
-/** Render an attack result card */
+/** Roll N dice of given sides, returns {rolls, total} */
+function btRollDice(n, sides) {
+  const rolls = [];
+  let total = 0;
+  for (let i = 0; i < n; i++) {
+    const r = Math.ceil(Math.random() * sides);
+    rolls.push(r); total += r;
+  }
+  return { rolls, total };
+}
+
+/** Render an attack result card — rolls dice and shows HIT/MISS confirmation */
 function btAttack(weapon) {
-  // If action was used for something non-attack, block
-  const alreadyAttacking = btState.currentRoundLog.some(e => e.type === 'attack');
+  const alreadyAttacking = btState.currentRoundLog.some(
+    e => e.type === 'attack' || e.type === 'attack-hit' || e.type === 'attack-miss');
   if (btState.actionUsed && !alreadyAttacking) {
-    btShowResult(`<div class="bt-result-warn">⚠ You already used your Action this round for something else.</div>`); return;
+    btShowResult(`<div class="bt-result-warn">⚠ Action already used for something else this round.</div>`); return;
   }
   if (btState.attacksThisTurn >= 4) {
     btShowResult(`<div class="bt-result-warn">⚠ All 4 attacks used this turn.</div>`); return;
   }
 
   const s = btGetStats();
-  const magic = DWARVEN_THROWER_BONUS; // +3
+  const magic = DWARVEN_THROWER_BONUS;
 
-  if (!btState.actionUsed) { btState.actionUsed = true; }
+  // ── Save undo snapshot BEFORE modifying state ──
+  btState.undoStack.push({
+    attacksThisTurn: btState.attacksThisTurn,
+    actionUsed:      btState.actionUsed,
+    gmDiceUsed:      btState.gmDiceUsed,
+    logLen:          btState.currentRoundLog.length,
+  });
+
+  if (!btState.actionUsed) btState.actionUsed = true;
   btState.attacksThisTurn++;
 
   let hitBonus, damageDice, damageBonus, notes = [], weaponLabel;
 
   if (weapon === 'thrown') {
-    weaponLabel = 'Dwarven Thrower (Thrown)';
+    weaponLabel = 'DT Thrown';
     hitBonus = s.mStr + s.prof + magic + ARCHERY_STYLE_BONUS;
     damageBonus = s.mStr + magic;
     if (s.ss) { hitBonus -= 5; damageBonus += 10; notes.push('Sharpshooter −5/+10'); }
     damageDice = s.vsG ? '3d8' : '2d8';
     if (s.vsG) notes.push('vs Giant +1d8');
-    notes.push('bludgeoning · returns end of turn');
+    notes.push('bludg · returns');
   } else if (weapon === 'melee') {
-    weaponLabel = 'Dwarven Thrower (Melee)';
+    weaponLabel = 'DT Melee';
     hitBonus = s.mStr + s.prof + magic;
     damageBonus = s.mStr + magic;
     if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5/+10'); }
     damageDice = '1d8';
-    notes.push('bludgeoning · Versatile 1d10');
+    notes.push('bludg');
   } else if (weapon === 'halberd') {
     weaponLabel = 'Halberd';
     hitBonus = s.mStr + s.prof;
     damageBonus = s.mStr;
     if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5/+10'); }
     damageDice = '1d10';
-    notes.push('slashing · Reach 10 ft');
+    notes.push('slash · reach 10ft');
   } else {
     weaponLabel = 'Battle Axe';
     hitBonus = s.mStr + s.prof;
     damageBonus = s.mStr;
     if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5/+10'); }
     damageDice = '1d8';
-    notes.push('slashing · Versatile 1d10');
+    notes.push('slash');
   }
 
-  // Giant's Might 1d10 bonus — only first attack per turn
-  let gmExtra = '';
+  // ── Roll d20 to hit ──
+  const d20 = Math.ceil(Math.random() * 20);
+  const isCrit = d20 === 20;
+  const isFumble = d20 === 1;
+  const totalHit = d20 + hitBonus;
+  const hitColor = isCrit ? '#ffd700' : isFumble ? '#ff6060' : '#e8e0cc';
+  const critBadge = isCrit ? ' <strong style="color:#ffd700">CRIT!</strong>' : isFumble ? ' <strong style="color:#ff6060">FUMBLE</strong>' : '';
+
+  // ── Roll damage (double dice on crit) ──
+  const [dCount, dSides] = damageDice.match(/(\d+)d(\d+)/).slice(1).map(Number);
+  const rollCount = isCrit ? dCount * 2 : dCount;
+  const dmg = btRollDice(rollCount, dSides);
+
+  // ── Giant's Might 1d10 on first attack ──
+  let gmRoll = 0, gmNote = '';
   if (s.gmA && !btState.gmDiceUsed) {
-    gmExtra = ' + 1d10'; btState.gmDiceUsed = true; notes.push("Giant's Might 1d10 (first attack only)");
+    btState.gmDiceUsed = true;
+    gmRoll = Math.ceil(Math.random() * 10);
+    gmNote = `Giant's Might: +${gmRoll} (1d10)`;
   }
 
+  const totalDmg = dmg.total + gmRoll + damageBonus;
   const atkNum = btState.attacksThisTurn;
   const remaining = 4 - atkNum;
-  btAddLog(`Atk ${atkNum}:${weaponLabel.split('(')[0].trim()}`, 'attack');
+
+  // Add pending log entry — updated when HIT/MISS confirmed
+  const logIdx = btAddLog(`Atk${atkNum}: ${weaponLabel}…`, 'attack');
   btRender();
+
+  const dmgBreakdown = `[${dmg.rolls.join('+')}]${isCrit ? '×2' : ''}${gmRoll > 0 ? `+GM(${gmRoll})` : ''}${fmtMod(damageBonus)}`;
 
   btShowResult(`
     <div class="bt-result-card">
-      <div class="bt-result-head">&#9876; Attack ${atkNum} of 4 — ${weaponLabel}</div>
+      <div class="bt-result-head">⚔ Attack ${atkNum} of 4 &mdash; ${weaponLabel}</div>
       <div class="bt-result-dice-row">
         <div class="bt-dice-block bt-hit-block">
-          <div class="bt-dice-label">To Hit — roll d20 then add:</div>
-          <div class="bt-dice-value">1d20 <span class="bt-bonus">${fmtMod(hitBonus)}</span></div>
+          <div class="bt-dice-label">To Hit &nbsp;(d20 ${fmtMod(hitBonus)})</div>
+          <div class="bt-dice-value" style="color:${hitColor}">[${d20}]${fmtMod(hitBonus)} = <strong>${totalHit}</strong>${critBadge}</div>
         </div>
         <div class="bt-dice-arrow">&#10132;</div>
         <div class="bt-dice-block bt-dmg-block">
-          <div class="bt-dice-label">On hit — damage:</div>
-          <div class="bt-dice-value">${damageDice}${gmExtra} <span class="bt-bonus">${fmtMod(damageBonus)}</span></div>
+          <div class="bt-dice-label">Damage &nbsp;${damageDice}${gmRoll > 0 ? '+1d10' : ''}${isCrit ? ' (CRIT ×2)' : ''}</div>
+          <div class="bt-dice-value">${dmgBreakdown} = <strong>${totalDmg}</strong></div>
         </div>
       </div>
       ${notes.length ? `<div class="bt-result-notes">${notes.join(' &middot; ')}</div>` : ''}
-      ${remaining > 0
-        ? `<div class="bt-result-hint">${remaining} attack${remaining > 1 ? 's' : ''} remaining — click again to continue</div>`
-        : `<div class="bt-result-hint bt-hint-done">&#9889; All 4 attacks used this turn!</div>`}
+      ${gmNote ? `<div class="bt-result-notes" style="color:#ffd700">${gmNote}</div>` : ''}
+      <div class="bt-confirm-row">
+        <button class="bt-confirm-btn bt-hit-btn" onclick="btConfirmHit(${logIdx},'hit',${totalHit},${totalDmg},'${weapon}',${atkNum})">✓ HIT</button>
+        <button class="bt-confirm-btn bt-miss-btn" onclick="btConfirmHit(${logIdx},'miss',${totalHit},0,'${weapon}',${atkNum})">✗ MISS</button>
+        ${remaining > 0
+          ? `<span class="bt-result-hint">${remaining} attack${remaining > 1 ? 's' : ''} remaining</span>`
+          : `<span class="bt-result-hint bt-hint-done">⚡ All 4 attacks done!</span>`}
+      </div>
     </div>
   `);
+}
+
+/** Record HIT or MISS for a pending attack log entry */
+function btConfirmHit(logIdx, result, totalHit, totalDmg, weapon, atkNum) {
+  const labels = { thrown: 'DT Thrown', melee: 'DT Melee', halberd: 'Halberd', axe: 'Battle Axe' };
+  const label = labels[weapon] || weapon;
+  const entry = btState.currentRoundLog[logIdx];
+  if (entry) {
+    if (result === 'hit') {
+      entry.text = `Atk${atkNum}: ${label} → ${totalHit} HIT · ${totalDmg}dmg`;
+      entry.type = 'attack-hit';
+    } else {
+      entry.text = `Atk${atkNum}: ${label} → ${totalHit} MISS`;
+      entry.type = 'attack-miss';
+    }
+    btRenderLog();
+  }
+  const remaining = 4 - (btState.attacksThisTurn || atkNum);
+  btShowResult(`<div class="bt-result-hint ${result === 'hit' ? 'bt-hint-done' : 'bt-result-miss'}">
+    ${result === 'hit'
+      ? `✓ HIT recorded — <strong>${totalDmg} damage</strong>`
+      : `✗ MISS recorded`}
+    ${remaining > 0 ? ` &mdash; ${remaining} attack${remaining > 1 ? 's' : ''} left this turn` : ''}
+  </div>`);
+}
+
+/** Undo last attack */
+function btUndo() {
+  if (!btState.undoStack.length) {
+    btShowResult(`<div class="bt-result-warn">⚠ Nothing to undo.</div>`); return;
+  }
+  const snap = btState.undoStack.pop();
+  btState.attacksThisTurn = snap.attacksThisTurn;
+  btState.actionUsed      = snap.actionUsed;
+  btState.gmDiceUsed      = snap.gmDiceUsed;
+  btState.currentRoundLog.splice(snap.logLen);
+  btRender();
+  btShowResult(`<div class="bt-result-hint">↩ Last attack undone &mdash; ${btState.attacksThisTurn} of 4 attacks used this turn.</div>`);
+}
+
+/** Switch weapon — costs half movement */
+function btSwitchWeapon() {
+  const cost = Math.floor(btState.maxMove / 2);
+  if (btState.moveLeft <= 0) {
+    btShowResult(`<div class="bt-result-warn">⚠ No movement remaining to switch weapons!</div>`); return;
+  }
+  btState.moveLeft = Math.max(0, btState.moveLeft - cost);
+  btRender();
+  btAddLog(`Switch wpn (−${cost}ft)`, 'bonus');
+  btShowResult(`<div class="bt-result-hint">🔀 Weapon switched — costs <strong>${cost}ft</strong> of movement.<br>Movement remaining: <strong>${btState.moveLeft}ft</strong></div>`);
 }
 
 /** Handle bonus/reaction abilities */
@@ -924,12 +1039,15 @@ function btUse(ability) {
 }
 
 // Explicitly expose battle-tracker functions to global scope for inline onclick handlers
-window.btStartCombat = btStartCombat;
-window.btEndCombat   = btEndCombat;
-window.btNextRound   = btNextRound;
-window.btToggleSlot  = btToggleSlot;
-window.btAttack      = btAttack;
-window.btUse         = btUse;
+window.btStartCombat  = btStartCombat;
+window.btEndCombat    = btEndCombat;
+window.btNextRound    = btNextRound;
+window.btToggleSlot   = btToggleSlot;
+window.btAttack       = btAttack;
+window.btUse          = btUse;
+window.btConfirmHit   = btConfirmHit;
+window.btUndo         = btUndo;
+window.btSwitchWeapon = btSwitchWeapon;
 
 
 // ─────────────────────────────────────────────────────────────
