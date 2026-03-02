@@ -1052,6 +1052,195 @@ input[type="number"]:focus, input[type="text"]:focus { border-color: var(--gold-
   .combat-features-section { break-inside: avoid; }
 }
 
+/* ──────────────────── QUICK REFERENCE BAR ──────────────────── */
+.quick-ref-bar {
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  background: var(--iron);
+  border-bottom: 3px solid var(--rune-gold);
+  flex-wrap: wrap;
+}
+.qr-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 2rem;
+  gap: 0.1rem;
+}
+.qr-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--rune-gold);
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.qr-label {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.8);
+  white-space: nowrap;
+}
+.qr-divider {
+  width: 1px;
+  background: rgba(255, 255, 255, 0.15);
+  margin: 0.5rem 0;
+  align-self: stretch;
+}
+@media print {
+  .quick-ref-bar {
+    background: transparent !important;
+    border-bottom: 2px solid #333;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .qr-value { color: #333 !important; }
+  .qr-label { color: #555 !important; }
+  .qr-divider { background: #999 !important; }
+}
+
+/* ──────────────────── SKILL GROUP HEADERS ──────────────────── */
+.skills-list .skill-group-header {
+  list-style: none;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--rune-gold);
+  border-top: 1px solid rgba(184, 134, 11, 0.3);
+  padding-top: 0.35rem;
+  margin-top: 0.25rem;
+  padding-left: 0;
+}
+.skills-list .skill-group-header:first-child {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+
+/* ──────────────────── DYNAMIC LISTS (languages, tools) ──────────────────── */
+.dyn-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+}
+.btn-add-inline {
+  font-size: 0.65rem;
+  padding: 0.12rem 0.45rem;
+  background: rgba(184, 134, 11, 0.1);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--iron);
+  line-height: 1.4;
+}
+.btn-add-inline:hover { background: rgba(184, 134, 11, 0.25); }
+.dyn-list-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.18rem 0.1rem;
+  border-bottom: 1px solid rgba(184, 134, 11, 0.1);
+  list-style: none;
+  font-size: 0.82rem;
+}
+.dyn-item-name {
+  flex: 1;
+  cursor: text;
+  outline: none;
+}
+.dyn-item-name:focus {
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 3px;
+  padding: 0 0.2rem;
+}
+.dyn-item-note {
+  font-size: 0.7rem;
+  color: var(--iron);
+  opacity: 0.7;
+}
+.dyn-delete {
+  font-size: 0.7rem;
+  color: #bbb;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0 0.2rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.dyn-delete:hover { color: #c00; }
+
+/* ──────────────────── COMBAT RESOURCES TABLE ──────────────────── */
+.res-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.83rem;
+}
+.res-table td {
+  padding: 0.38rem 0.5rem;
+  border-bottom: 1px solid rgba(184, 134, 11, 0.12);
+  vertical-align: middle;
+}
+.res-table tr:last-child td { border-bottom: none; }
+.res-label {
+  font-weight: 600;
+  color: var(--iron);
+  white-space: nowrap;
+  width: 28%;
+}
+.res-tracker {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  width: 110px;
+}
+.res-note {
+  font-size: 0.72rem;
+  color: var(--iron);
+  font-style: italic;
+}
+.res-rest-cell {
+  width: 30px;
+  text-align: right;
+}
+.btn-res-restore {
+  font-size: 1.1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--rune-gold);
+  padding: 0;
+  line-height: 1;
+  transition: transform 0.15s;
+}
+.btn-res-restore:hover { transform: rotate(-30deg) scale(1.2); }
+.res-big {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--rune-gold);
+  line-height: 1;
+}
+
+/* ──────────────────── FEATS HEADER ──────────────────── */
+.feats-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.feats-header .section-title { margin-bottom: 0; }
+.feat-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.3rem;
+}
+.feat-card-header .feat-name { flex: 1; }
+
 /* ──────────────────── SHIELD TOGGLE ──────────────────── */
 .shield-toggle {
   display: flex;

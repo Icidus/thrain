@@ -71,20 +71,60 @@ const DEFAULT_EQUIPMENT = [
 let equipmentItems = [];
 
 // ─────────────────────────────────────────────────────────────
+// DEFAULT LANGUAGES, TOOLS, FEATS
+// ─────────────────────────────────────────────────────────────
+
+const DEFAULT_LANGUAGES = [
+  { id: 'la1', name: 'Common',          note: '' },
+  { id: 'la2', name: 'Nidavellrian',    note: 'Dwarven tongue' },
+  { id: 'la3', name: 'Yotun (Giant)',   note: 'Rune Knight study' },
+];
+
+const DEFAULT_TOOLS = [
+  { id: 'to1', name: "Brewer's Supplies", note: 'Proficient' },
+  { id: 'to2', name: "Smith's Tools",     note: '×2 Proficiency (Rune Knight)' },
+];
+
+const DEFAULT_FEATS = [
+  { id: 'fe1', name: 'Sentinel',            desc: 'Opportunity attacks stop movement. Can attack creatures that attack others. Creatures can\'t disengage past you.' },
+  { id: 'fe2', name: 'Polearm Master',      desc: 'Bonus action attack (1d4+STR) with butt end. Opportunity attacks when creatures enter reach.' },
+  { id: 'fe3', name: 'Great Weapon Master', desc: 'On crit or kill, bonus action attack. Choose −5 to hit for +10 damage.' },
+  { id: 'fe4', name: 'Sharpshooter',        desc: 'No disadv at long range. Ignore half/3/4 cover. −5 to hit for +10 damage (ranged).' },
+  { id: 'fe5', name: 'Resilient',           desc: '+1 to chosen ability. Gain proficiency in that ability\'s saving throw.' },
+  { id: 'fe6', name: 'Tough',               desc: 'HP max increases by 2 per level (+40 at Lv 20). Stacks with Rockman Toughness.' },
+];
+
+let languageItems = [];
+let toolItems = [];
+let featItems = [];
+
+// ─────────────────────────────────────────────────────────────
 // INITIALIZATION
 // ─────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadSheet(); // also calls renderEquipment internally
+  loadSheet(); // also calls renderEquipment + renderLanguages + renderTools + renderFeats internally
   recalcAll();
   updateXP();
   setFooterDate();
   hookAutoSave();
 
-  // Fallback: if loadSheet didn't render equipment (no saved data), render defaults
+  // Fallbacks if loadSheet found no saved data
   if (equipmentItems.length === 0) {
     equipmentItems = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
     renderEquipment();
+  }
+  if (languageItems.length === 0) {
+    languageItems = DEFAULT_LANGUAGES.map(l => ({ ...l }));
+    renderLanguages();
+  }
+  if (toolItems.length === 0) {
+    toolItems = DEFAULT_TOOLS.map(t => ({ ...t }));
+    renderTools();
+  }
+  if (featItems.length === 0) {
+    featItems = DEFAULT_FEATS.map(f => ({ ...f }));
+    renderFeats();
   }
 });
 
@@ -215,6 +255,14 @@ function recalcAll() {
   setText('ac-display', acVal);
   const acNote = document.getElementById('ac-note');
   if (acNote) acNote.textContent = shieldActive ? 'Plate + Shield' : 'Plate Armor';
+
+  // ── Quick Reference Bar ──
+  setText('qr-initiative',   fmtMod(mDex));
+  setText('qr-passive-perc', passivePerc);
+  setText('qr-wis-save',     fmtMod(mWis + prof));
+  setText('qr-ac',           acVal);
+  const qrHPEl = document.querySelector('[data-key="max_hp"]');
+  if (qrHPEl) setText('qr-hp', qrHPEl.value || 304);
 
   // Rune Save DC: 8 + prof + CON mod
   const runeDC = 8 + prof + mCon;
@@ -442,12 +490,17 @@ function restoreRunicShield() {
   saveSheet(true);
 }
 
-/** Short Rest: restore Action Surge + Second Wind */
+/** Short Rest: restore Action Surge + Second Wind + all SR runes (2 uses each) */
 function doShortRest() {
-  if (!confirm('Take a Short Rest? This restores Action Surge and Second Wind.')) return;
+  if (!confirm('Take a Short Rest? This restores Action Surge, Second Wind, and all SR runes.')) return;
   restoreResource(['as1', 'as2', 'sw1']);
-  // Hit dice can be spent — just remind
+  restoreResource(['rune_fire_used',  'rune_fire_used2',
+                   'rune_stone_used', 'rune_stone_used2',
+                   'rune_hill_used',  'rune_hill_used2',
+                   'rune_cloud_used', 'rune_cloud_used2',
+                   'rune_storm_used', 'rune_storm_used2']);
   flashStatus('Short Rest taken — spend Hit Dice to heal if needed', 'success');
+  saveSheet(true);
 }
 
 /** Long Rest: restore everything */
@@ -455,14 +508,17 @@ function doLongRest() {
   if (!confirm('Take a Long Rest? This restores all resources.')) return;
   // Action Surge, Indomitable, Second Wind
   restoreResource(['as1', 'as2', 'ind1', 'ind2', 'ind3', 'sw1']);
-  // All runes
-  restoreResource(['rune_fire_used', 'rune_stone_used', 'rune_hill_used',
-                   'rune_cloud_used', 'rune_storm_used']);
+  // All runes (2 uses each)
+  restoreResource(['rune_fire_used',  'rune_fire_used2',
+                   'rune_stone_used', 'rune_stone_used2',
+                   'rune_hill_used',  'rune_hill_used2',
+                   'rune_cloud_used', 'rune_cloud_used2',
+                   'rune_storm_used', 'rune_storm_used2']);
   // Runic Shield
   restoreRunicShield();
   // Giant's Might
   restoreGiantsMight();
-  // Reset hit dice used to 0 (long rest restores up to half total)
+  // Reset hit dice used
   const hdu = document.querySelector('[data-key="hit_dice_used"]');
   if (hdu) hdu.value = 0;
   flashStatus('Long Rest complete — all resources restored', 'success');
@@ -708,6 +764,11 @@ function collectData() {
   // Equipment
   data['_equipment'] = equipmentItems;
 
+  // Languages, Tools, Feats
+  data['_languages'] = languageItems;
+  data['_tools']     = toolItems;
+  data['_feats']     = featItems;
+
   // Journal entries
   data['_journal_entries'] = journalEntries;
 
@@ -812,6 +873,30 @@ function applySheetData(data) {
     equipmentItems = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
   }
   renderEquipment();
+
+  // Languages
+  if (Array.isArray(data['_languages']) && data['_languages'].length > 0) {
+    languageItems = data['_languages'];
+  } else {
+    languageItems = DEFAULT_LANGUAGES.map(l => ({ ...l }));
+  }
+  renderLanguages();
+
+  // Tools
+  if (Array.isArray(data['_tools']) && data['_tools'].length > 0) {
+    toolItems = data['_tools'];
+  } else {
+    toolItems = DEFAULT_TOOLS.map(t => ({ ...t }));
+  }
+  renderTools();
+
+  // Feats
+  if (Array.isArray(data['_feats']) && data['_feats'].length > 0) {
+    featItems = data['_feats'];
+  } else {
+    featItems = DEFAULT_FEATS.map(f => ({ ...f }));
+  }
+  renderFeats();
 
   // Journal entries
   if (Array.isArray(data['_journal_entries'])) {
@@ -1049,4 +1134,116 @@ function filterEquip(btn, cat) {
   document.querySelectorAll('.equip-item').forEach(li => {
     li.classList.toggle('hidden', cat !== 'all' && li.dataset.cat !== cat);
   });
+}
+// ─────────────────────────────────────────────────────────────
+// DYNAMIC LANGUAGES
+// ─────────────────────────────────────────────────────────────
+
+function renderLanguages() {
+  const ul = document.getElementById('languages-list');
+  if (!ul) return;
+  ul.innerHTML = '';
+  languageItems.forEach(item => {
+    const li = document.createElement('li');
+    li.className = 'dyn-list-item';
+    li.dataset.id = item.id;
+    li.innerHTML = `
+      <span class="dyn-item-name" contenteditable="true"
+        onblur="updateDynItem(languageItems, '${item.id}', 'name', this); saveSheet(true);">${escapeHtml(item.name)}</span>
+      ${item.note ? `<span class="dyn-item-note"> — ${escapeHtml(item.note)}</span>` : ''}
+      <button class="dyn-delete no-print" onclick="deleteDynItem('language', '${item.id}')" title="Remove">\u00d7</button>
+    `;
+    ul.appendChild(li);
+  });
+}
+
+function addLanguage() {
+  const name = prompt('New language:');
+  if (!name?.trim()) return;
+  const note = prompt('Note (optional — e.g. script, dialect):', '') || '';
+  languageItems.push({ id: 'la' + Date.now(), name: name.trim(), note: note.trim() });
+  renderLanguages();
+  saveSheet(true);
+}
+
+// ─────────────────────────────────────────────────────────────
+// DYNAMIC TOOLS
+// ─────────────────────────────────────────────────────────────
+
+function renderTools() {
+  const ul = document.getElementById('tools-list');
+  if (!ul) return;
+  ul.innerHTML = '';
+  toolItems.forEach(item => {
+    const li = document.createElement('li');
+    li.className = 'dyn-list-item';
+    li.dataset.id = item.id;
+    li.innerHTML = `
+      <span class="dyn-item-name" contenteditable="true"
+        onblur="updateDynItem(toolItems, '${item.id}', 'name', this); saveSheet(true);">${escapeHtml(item.name)}</span>
+      ${item.note ? `<span class="dyn-item-note"> — ${escapeHtml(item.note)}</span>` : ''}
+      <button class="dyn-delete no-print" onclick="deleteDynItem('tool', '${item.id}')" title="Remove">\u00d7</button>
+    `;
+    ul.appendChild(li);
+  });
+}
+
+function addTool() {
+  const name = prompt('New tool proficiency:');
+  if (!name?.trim()) return;
+  const note = prompt('Note (optional — e.g. ×2 Prof, Prof):', '') || '';
+  toolItems.push({ id: 'to' + Date.now(), name: name.trim(), note: note.trim() });
+  renderTools();
+  saveSheet(true);
+}
+
+// ─────────────────────────────────────────────────────────────
+// DYNAMIC FEATS
+// ─────────────────────────────────────────────────────────────
+
+function renderFeats() {
+  const container = document.getElementById('feats-list');
+  if (!container) return;
+  container.innerHTML = '';
+  featItems.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'feat-card';
+    div.dataset.id = item.id;
+    div.innerHTML = `
+      <div class="feat-card-header">
+        <div class="feat-name" contenteditable="true"
+          onblur="updateDynItem(featItems, '${item.id}', 'name', this); saveSheet(true);">${escapeHtml(item.name)}</div>
+        <button class="dyn-delete no-print" onclick="deleteDynItem('feat', '${item.id}')" title="Remove">\u00d7</button>
+      </div>
+      <div class="feat-desc" contenteditable="true"
+        onblur="updateDynItem(featItems, '${item.id}', 'desc', this); saveSheet(true);">${escapeHtml(item.desc)}</div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+function addFeat() {
+  const name = prompt('Feat name:');
+  if (!name?.trim()) return;
+  const desc = prompt('Description:', '') || '';
+  featItems.push({ id: 'fe' + Date.now(), name: name.trim(), desc: desc.trim() });
+  renderFeats();
+  saveSheet(true);
+}
+
+// ─────────────────────────────────────────────────────────────
+// SHARED DYNAMIC LIST HELPERS
+// ─────────────────────────────────────────────────────────────
+
+function updateDynItem(arr, id, field, el) {
+  const item = arr.find(i => i.id === id);
+  if (item) item[field] = el.textContent.trim();
+}
+
+function deleteDynItem(type, id) {
+  if (!confirm('Remove this item?')) return;
+  if (type === 'language') { languageItems = languageItems.filter(i => i.id !== id); renderLanguages(); }
+  else if (type === 'tool')     { toolItems = toolItems.filter(i => i.id !== id); renderTools(); }
+  else if (type === 'feat')     { featItems = featItems.filter(i => i.id !== id); renderFeats(); }
+  saveSheet(true);
 }

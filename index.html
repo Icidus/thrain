@@ -79,6 +79,34 @@
       </div>
     </header>
 
+    <!-- ═══════════════ QUICK REFERENCE BAR ═══════════════ -->
+    <div class="quick-ref-bar">
+      <div class="qr-item">
+        <div class="qr-value" id="qr-initiative">+0</div>
+        <div class="qr-label">Initiative</div>
+      </div>
+      <div class="qr-divider"></div>
+      <div class="qr-item">
+        <div class="qr-value" id="qr-passive-perc">18</div>
+        <div class="qr-label">Passive Perception</div>
+      </div>
+      <div class="qr-divider"></div>
+      <div class="qr-item">
+        <div class="qr-value" id="qr-wis-save">+8</div>
+        <div class="qr-label">WIS Save</div>
+      </div>
+      <div class="qr-divider"></div>
+      <div class="qr-item">
+        <div class="qr-value" id="qr-ac">18</div>
+        <div class="qr-label">Armor Class</div>
+      </div>
+      <div class="qr-divider"></div>
+      <div class="qr-item">
+        <div class="qr-value" id="qr-hp">304</div>
+        <div class="qr-label">Max HP</div>
+      </div>
+    </div>
+
     <!-- ═══════════════════════ BODY ═══════════════════════ -->
     <div class="sheet-body">
 
@@ -163,26 +191,35 @@
         <section class="section skills-section">
           <h2 class="section-title">Skills</h2>
           <ul class="save-skill-list skills-list">
-            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-athletics">+10</span> Athletics <span class="skill-ability">(STR)</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-acrobatics">+0</span> Acrobatics <span class="skill-ability">(DEX)</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-sleight">+0</span> Sleight of Hand <span class="skill-ability">(DEX)</span> <span class="expertise-badge">×2</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-stealth">+0</span> Stealth <span class="skill-ability">(DEX)</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-arcana">-1</span> Arcana <span class="skill-ability">(INT)</span> <span class="expertise-badge">×2</span> <span class="adv-badge">ADV</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-history">-1</span> History <span class="skill-ability">(INT)</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-investigation">-1</span> Investigation <span class="skill-ability">(INT)</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-nature">-1</span> Nature <span class="skill-ability">(INT)</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-religion">-1</span> Religion <span class="skill-ability">(INT)</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-animal">+2</span> Animal Handling <span class="skill-ability">(WIS)</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-insight">+2</span> Insight <span class="skill-ability">(WIS)</span> <span class="expertise-badge">×2</span> <span class="adv-badge">ADV</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-medicine">+2</span> Medicine <span class="skill-ability">(WIS)</span></li>
-            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-perception">+8</span> Perception <span class="skill-ability">(WIS)</span> <span class="disadv-badge">DISADV*</span></li>
-            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-survival">+8</span> Survival <span class="skill-ability">(WIS)</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-deception">+1</span> Deception <span class="skill-ability">(CHA)</span> <span class="expertise-badge">×2</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-intimidation">+1</span> Intimidation <span class="skill-ability">(CHA)</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-performance">+1</span> Performance <span class="skill-ability">(CHA)</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-persuasion">+1</span> Persuasion <span class="skill-ability">(CHA)</span></li>
+            <li class="skill-group-header">Strength</li>
+            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-athletics">+10</span> Athletics</li>
+
+            <li class="skill-group-header">Dexterity</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-acrobatics">+0</span> Acrobatics</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-sleight">+0</span> Sleight of Hand <span class="expertise-badge">×2</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-stealth">+0</span> Stealth</li>
+
+            <li class="skill-group-header">Intelligence</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-arcana">-1</span> Arcana <span class="expertise-badge">×2</span> <span class="adv-badge">ADV</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-history">-1</span> History</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-investigation">-1</span> Investigation</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-nature">-1</span> Nature</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-religion">-1</span> Religion</li>
+
+            <li class="skill-group-header">Wisdom</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-animal">+2</span> Animal Handling</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-insight">+2</span> Insight <span class="expertise-badge">×2</span> <span class="adv-badge">ADV</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-medicine">+2</span> Medicine</li>
+            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-perception">+8</span> Perception <span class="disadv-badge">DISADV*</span></li>
+            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-survival">+8</span> Survival</li>
+
+            <li class="skill-group-header">Charisma</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-deception">+1</span> Deception <span class="expertise-badge">×2</span></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-intimidation">+1</span> Intimidation</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-performance">+1</span> Performance</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-persuasion">+1</span> Persuasion</li>
           </ul>
-          <p class="footnote">* Perception: Disadvantage when hammer is stationary (see Combat Features)</p>
+          <p class="footnote">* Perception: Disadvantage — missing eye</p>
           <div class="passive-block">
             <span class="field-label">Passive Perception</span>
             <span id="passive-perception" class="passive-val">18</span>
@@ -196,19 +233,18 @@
           <h2 class="section-title">Languages &amp; Tools</h2>
           <div class="two-col-list">
             <div>
-              <strong>Languages:</strong>
-              <ul>
-                <li>Common</li>
-                <li>Nidavellrian</li>
-                <li>Yotun (Giant)</li>
-              </ul>
+              <div class="dyn-list-header">
+                <strong>Languages</strong>
+                <button class="btn-add-inline no-print" onclick="addLanguage()">+ Add</button>
+              </div>
+              <ul id="languages-list"><!-- JS rendered --></ul>
             </div>
             <div>
-              <strong>Tool Proficiencies:</strong>
-              <ul>
-                <li>Brewer's Supplies</li>
-                <li>Smith's Tools <span class="expertise-badge">×2 Prof</span></li>
-              </ul>
+              <div class="dyn-list-header">
+                <strong>Tool Proficiencies</strong>
+                <button class="btn-add-inline no-print" onclick="addTool()">+ Add</button>
+              </div>
+              <ul id="tools-list"><!-- JS rendered --></ul>
             </div>
           </div>
           <div class="stonecunning-note">
@@ -249,7 +285,7 @@
             </div>
             <div class="hp-block">
               <div class="field-label">Max HP</div>
-              <input class="hp-input" type="number" data-key="max_hp" value="304" />
+              <input class="hp-input" type="number" data-key="max_hp" value="304" oninput="recalcAll()" />
               <div class="sub-note">Includes Tough feat &amp; Rockman Toughness</div>
             </div>
             <div class="hp-block">
@@ -283,54 +319,43 @@
         <!-- COMBAT RESOURCES -->
         <section class="section combat-resources-section">
           <h2 class="section-title">⚔ Combat Resources</h2>
-          <div class="resources-grid">
-
-            <div class="resource-block">
-              <div class="resource-name">Extra Attack</div>
-              <div class="resource-value">4×</div>
-              <div class="resource-note">attacks per Attack action</div>
-            </div>
-
-            <div class="resource-block">
-              <div class="resource-name">Action Surge</div>
-              <div class="resource-tracker">
-                <input type="checkbox" data-key="as1" class="res-check" />
-                <input type="checkbox" data-key="as2" class="res-check" />
-              </div>
-              <div class="resource-note">2 / Short or Long Rest</div>
-              <div class="resource-restore no-print">
-                <button class="btn-tiny" onclick="restoreResource(['as1','as2'])">SR</button>
-                <button class="btn-tiny" onclick="restoreResource(['as1','as2'])">LR</button>
-              </div>
-            </div>
-
-            <div class="resource-block">
-              <div class="resource-name">Indomitable</div>
-              <div class="resource-tracker">
-                <input type="checkbox" data-key="ind1" class="res-check" />
-                <input type="checkbox" data-key="ind2" class="res-check" />
-                <input type="checkbox" data-key="ind3" class="res-check" />
-              </div>
-              <div class="resource-note">3 / Long Rest · Reroll failed save</div>
-              <div class="resource-restore no-print">
-                <button class="btn-tiny" onclick="restoreResource(['ind1','ind2','ind3'])">LR</button>
-              </div>
-            </div>
-
-            <div class="resource-block">
-              <div class="resource-name">Second Wind</div>
-              <div class="resource-tracker">
-                <input type="checkbox" data-key="sw1" class="res-check" />
-              </div>
-              <div class="resource-note">1 / Short or Long Rest · 1d10+<span id="sw-level">20</span> HP</div>
-              <div class="resource-restore no-print">
-                <button class="btn-tiny" onclick="restoreResource(['sw1'])">SR</button>
-                <button class="btn-tiny" onclick="restoreResource(['sw1'])">LR</button>
-              </div>
-            </div>
-
-          </div>
-          <!-- Long/Short rest master buttons -->
+          <table class="res-table">
+            <tbody>
+              <tr class="res-row">
+                <td class="res-label">Extra Attack</td>
+                <td class="res-tracker"><span class="res-big">4×</span></td>
+                <td class="res-note">per Attack action (Fighter Lv 20)</td>
+                <td class="res-rest-cell"></td>
+              </tr>
+              <tr class="res-row">
+                <td class="res-label">Action Surge</td>
+                <td class="res-tracker">
+                  <input type="checkbox" data-key="as1" class="res-check" />
+                  <input type="checkbox" data-key="as2" class="res-check" />
+                </td>
+                <td class="res-note">2 uses &nbsp;·&nbsp; SR / LR</td>
+                <td class="res-rest-cell no-print"><button class="btn-res-restore" onclick="restoreResource(['as1','as2'])" title="Restore">↺</button></td>
+              </tr>
+              <tr class="res-row">
+                <td class="res-label">Indomitable</td>
+                <td class="res-tracker">
+                  <input type="checkbox" data-key="ind1" class="res-check" />
+                  <input type="checkbox" data-key="ind2" class="res-check" />
+                  <input type="checkbox" data-key="ind3" class="res-check" />
+                </td>
+                <td class="res-note">3 uses &nbsp;·&nbsp; LR &nbsp;·&nbsp; Reroll failed save</td>
+                <td class="res-rest-cell no-print"><button class="btn-res-restore" onclick="restoreResource(['ind1','ind2','ind3'])" title="Restore">↺</button></td>
+              </tr>
+              <tr class="res-row">
+                <td class="res-label">Second Wind</td>
+                <td class="res-tracker">
+                  <input type="checkbox" data-key="sw1" class="res-check" />
+                </td>
+                <td class="res-note">1 use &nbsp;·&nbsp; SR / LR &nbsp;·&nbsp; +1d10+<span id="sw-level">20</span> HP</td>
+                <td class="res-rest-cell no-print"><button class="btn-res-restore" onclick="restoreResource(['sw1'])" title="Restore">↺</button></td>
+              </tr>
+            </tbody>
+          </table>
           <div class="rest-buttons no-print">
             <button class="btn-rest sr" onclick="doShortRest()">⏱ Short Rest</button>
             <button class="btn-rest lr" onclick="doLongRest()">🌙 Long Rest</button>
@@ -514,33 +539,11 @@
 
         <!-- FEATS -->
         <section class="section feats-section">
-          <h2 class="section-title">Feats</h2>
-          <div class="feat-grid">
-            <div class="feat-card">
-              <div class="feat-name">Sentinel</div>
-              <div class="feat-desc">Opportunity attacks stop movement. Can attack creatures that attack others. Creatures can't disengage past you.</div>
-            </div>
-            <div class="feat-card">
-              <div class="feat-name">Polearm Master</div>
-              <div class="feat-desc">Bonus action attack (1d4+STR) with butt end. Opportunity attacks when creatures enter reach.</div>
-            </div>
-            <div class="feat-card">
-              <div class="feat-name">Great Weapon Master</div>
-              <div class="feat-desc">On crit or kill, bonus action attack. Choose −5 to hit for +10 damage.</div>
-            </div>
-            <div class="feat-card">
-              <div class="feat-name">Sharpshooter</div>
-              <div class="feat-desc">No disadv at long range. Ignore half/3/4 cover. −5 to hit for +10 damage (ranged).</div>
-            </div>
-            <div class="feat-card">
-              <div class="feat-name">Resilient</div>
-              <div class="feat-desc">+1 to chosen ability. Gain proficiency in that ability's saving throw.</div>
-            </div>
-            <div class="feat-card">
-              <div class="feat-name">Tough</div>
-              <div class="feat-desc">HP max increases by 2 per level (+40 at Lv 20). Stacks with Rockman Toughness.</div>
-            </div>
+          <div class="feats-header">
+            <h2 class="section-title">Feats</h2>
+            <button class="btn-small no-print" onclick="addFeat()">+ Add Feat</button>
           </div>
+          <div id="feats-list" class="feat-grid"><!-- JS rendered --></div>
         </section>
 
         <!-- EQUIPMENT -->
@@ -612,7 +615,8 @@
             <div class="rune-use-tracker">
               <span class="rune-use-label">Used:</span>
               <input type="checkbox" data-key="rune_fire_used" class="rune-check" />
-              <button class="btn-tiny no-print" onclick="restoreResource(['rune_fire_used'])">SR/LR</button>
+              <input type="checkbox" data-key="rune_fire_used2" class="rune-check" />
+              <button class="btn-tiny no-print" onclick="restoreResource(['rune_fire_used','rune_fire_used2'])">↺ SR/LR</button>
             </div>
             <div class="rune-body">
               <strong>Activate (reaction on hit):</strong> Target makes DC <span class="rune-dc-inline">20</span> STR save or is restrained. Takes 2d6 fire at start of each turn. Repeats save each turn. Lasts 1 min or until freed.<br/>
@@ -624,7 +628,8 @@
             <div class="rune-use-tracker">
               <span class="rune-use-label">Used:</span>
               <input type="checkbox" data-key="rune_stone_used" class="rune-check" />
-              <button class="btn-tiny no-print" onclick="restoreResource(['rune_stone_used'])">SR/LR</button>
+              <input type="checkbox" data-key="rune_stone_used2" class="rune-check" />
+              <button class="btn-tiny no-print" onclick="restoreResource(['rune_stone_used','rune_stone_used2'])">↺ SR/LR</button>
             </div>
             <div class="rune-body">
               <strong>Activate (reaction, 30 ft):</strong> Target makes DC <span class="rune-dc-inline">20</span> WIS save or charmed 1 min (incapacitated, speed 0). Repeats each turn.<br/>
@@ -636,7 +641,8 @@
             <div class="rune-use-tracker">
               <span class="rune-use-label">Used:</span>
               <input type="checkbox" data-key="rune_hill_used" class="rune-check" />
-              <button class="btn-tiny no-print" onclick="restoreResource(['rune_hill_used'])">SR/LR</button>
+              <input type="checkbox" data-key="rune_hill_used2" class="rune-check" />
+              <button class="btn-tiny no-print" onclick="restoreResource(['rune_hill_used','rune_hill_used2'])">↺ SR/LR</button>
             </div>
             <div class="rune-body">
               <strong>Activate (bonus action):</strong> Resistance to bludgeoning, piercing, and slashing for 1 min.<br/>
@@ -648,7 +654,8 @@
             <div class="rune-use-tracker">
               <span class="rune-use-label">Used:</span>
               <input type="checkbox" data-key="rune_cloud_used" class="rune-check" />
-              <button class="btn-tiny no-print" onclick="restoreResource(['rune_cloud_used'])">SR/LR</button>
+              <input type="checkbox" data-key="rune_cloud_used2" class="rune-check" />
+              <button class="btn-tiny no-print" onclick="restoreResource(['rune_cloud_used','rune_cloud_used2'])">↺ SR/LR</button>
             </div>
             <div class="rune-body">
               <strong>Activate (reaction):</strong> Redirect a hit targeting you or ally (30 ft) to another creature within 30 ft.<br/>
@@ -660,7 +667,8 @@
             <div class="rune-use-tracker">
               <span class="rune-use-label">Used:</span>
               <input type="checkbox" data-key="rune_storm_used" class="rune-check" />
-              <button class="btn-tiny no-print" onclick="restoreResource(['rune_storm_used'])">SR/LR</button>
+              <input type="checkbox" data-key="rune_storm_used2" class="rune-check" />
+              <button class="btn-tiny no-print" onclick="restoreResource(['rune_storm_used','rune_storm_used2'])">↺ SR/LR</button>
             </div>
             <div class="rune-body">
               <strong>Activate (bonus action):</strong> Prophetic state 1 min — can't be surprised, treat rolls &lt;10 as 10 for atk/ability/saves.<br/>
