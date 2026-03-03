@@ -1661,7 +1661,7 @@ function buildPrintSheet() {
   </header>
   <div class="ps-body">
 
-    <!-- LEFT: Abilities + Saves + Senses -->
+    <!-- LEFT: Abilities + Saves + Skills (traditional layout) -->
     <div class="ps-left">
       <div class="ps-abl-grid">
         ${ ['str','dex','con','int','wis','cha'].map(abilityBox).join('') }
@@ -1674,8 +1674,12 @@ function buildPrintSheet() {
         <div class="ps-list-title">SAVING THROWS</div>
         ${SAVES.map(saveRow).join('')}
       </div>
+      <div class="ps-list-block ps-skills-list">
+        <div class="ps-list-title">SKILLS &nbsp;<span style="font-size:5pt;font-weight:normal">● Prof &nbsp; ◆ Expertise</span></div>
+        ${SKILLS.map(skillRow).join('')}
+      </div>
       <div class="ps-list-block">
-        <div class="ps-list-title">SENSES</div>
+        <div class="ps-list-title">PASSIVE SENSES</div>
         <div class="ps-prow">●<span class="ps-prow-v">${passPerc}</span><span class="ps-prow-n">Passive Perception</span></div>
         <div class="ps-prow">●<span class="ps-prow-v">${passIns}</span><span class="ps-prow-n">Passive Insight</span></div>
         <div class="ps-prow">○<span class="ps-prow-v">${fm(sm('int'))}</span><span class="ps-prow-n">Passive Investigation</span></div>
@@ -1683,7 +1687,7 @@ function buildPrintSheet() {
       </div>
     </div>
 
-    <!-- CENTER: Combat + Attacks + Skills -->
+    <!-- CENTER: Combat + HP + Attacks -->
     <div class="ps-center">
       <div class="ps-combat-row">
         <div class="ps-cbox"><div class="ps-cbox-v">${ac}</div><div class="ps-cbox-l">ARMOR CLASS</div></div>
@@ -1720,13 +1724,7 @@ function buildPrintSheet() {
             <tr><td>Battle Axe</td><td>${atk('axe-hit')}</td><td>${atk('axe-dmg')}</td></tr>
           </tbody>
         </table>
-        <div class="ps-fn">GWM: −5 to hit / +10 dmg · SS: −5 to hit / +10 dmg (ranged) · Giant's Might: +1d10 one attack/turn · Returns end of turn (thrown)</div>
-      </div>
-      <div class="ps-section">
-        <div class="ps-sec-title">SKILLS &nbsp;<span style="font-size:0.5rem;font-weight:normal">● Prof &nbsp; ◆ Expertise (×2 Prof)</span></div>
-        <div class="ps-skills-grid">
-          ${SKILLS.map(skillRow).join('')}
-        </div>
+        <div class="ps-fn">GWM: −5/+10 · SS: −5/+10 ranged · Giant's Might: +1d10 one attack/turn · Thrown hammer returns end of turn</div>
       </div>
     </div>
 

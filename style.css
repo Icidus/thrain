@@ -1848,7 +1848,7 @@ input[type="number"]:focus, input[type="text"]:focus { border-color: var(--gold-
 /* ── BODY 3-COLUMN ── */
 .ps-body {
   display: grid;
-  grid-template-columns: 136pt 1fr 140pt;
+  grid-template-columns: 165pt 1fr 140pt;
   gap: 0 6pt;
   align-items: start;
 }
@@ -1928,6 +1928,12 @@ input[type="number"]:focus, input[type="text"]:focus { border-color: var(--gold-
 .ps-prow-n  { flex: 1; font-size: 8pt; }
 .ps-prow-a  { font-size: 6pt; color: #444; flex-shrink: 0; }
 .ps-senses-note { font-size: 6.5pt; font-style: italic; margin-top: 2pt; color: #333; }
+
+/* ── COMPACT SKILLS LIST (left column) ── */
+.ps-skills-list .ps-prow { font-size: 6.5pt; padding: 0.4pt 0; }
+.ps-skills-list .ps-prow-v { font-size: 6.5pt; min-width: 18pt; }
+.ps-skills-list .ps-prow-n { font-size: 6.5pt; }
+.ps-skills-list .ps-prow-a { font-size: 5.5pt; }
 
 /* ── COMBAT STATS ROW ── */
 .ps-combat-row { display: flex; gap: 4pt; }
