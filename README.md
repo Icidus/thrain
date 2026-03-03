@@ -24,6 +24,7 @@ A custom HTML character sheet for **Thrain (Kreb-Smasher) Ironhammerson**, a Roc
 ## Usage
 
 ### Local
+
 Open `index.html` directly in any modern browser — no server required.
 
 ```bash
@@ -33,12 +34,14 @@ xdg-open index.html      # Linux
 ```
 
 ### GitHub Pages
+
 1. Push this repo to GitHub
 2. Go to **Settings → Pages**
 3. Under **Source**, select `Deploy from a branch` → `main` → `/ (root)`
 4. Save — your sheet will be live at `https://<username>.github.io/character_sheet/`
 
 ### Export to PDF
+
 - **Quick print:** `Ctrl/Cmd + P` → choose "Save as PDF"
 - **Export button:** Click `📄 Export PDF` in the toolbar — generates a multi-page letter-size PDF
 
@@ -46,8 +49,8 @@ xdg-open index.html      # Linux
 
 ## XP Thresholds (Beyond Level 20)
 
-| Level | XP Required  | Prof Bonus |
-|-------|-------------|------------|
+| Level | XP Required | Prof Bonus |
+| ----- | ----------- | ---------- |
 | 20    | 355,000     | +6         |
 | 21    | 710,000     | +7         |
 | 22    | 1,420,000   | +7         |
@@ -62,22 +65,24 @@ xdg-open index.html      # Linux
 
 ## Character Summary
 
-| Property | Value |
-|----------|-------|
-| Name | Thrain (Kreb-Smasher) Ironhammerson |
-| Race | Rockman (Dwarf) |
-| Class | Fighter (Rune Knight) 20 |
-| Background | Fisherman |
-| Alignment | Lawful Good |
-| HP | 304 |
-| AC | 18 (Plate Armor) |
+| Property   | Value                               |
+| ---------- | ----------------------------------- |
+| Name       | Thrain (Kreb-Smasher) Ironhammerson |
+| Race       | Rockman (Dwarf)                     |
+| Class      | Fighter (Rune Knight) 20            |
+| Background | Fisherman                           |
+| Alignment  | Lawful Good                         |
+| HP         | 304                                 |
+| AC         | 18 (Plate Armor)                    |
 
 ### Stats
-| STR | DEX | CON | INT | WIS | CHA |
-|-----|-----|-----|-----|-----|-----|
-| 18 (23 w/ Belt) | 10 | 22 | 8 | 14 | 12 |
+
+| STR             | DEX | CON | INT | WIS | CHA |
+| --------------- | --- | --- | --- | --- | --- |
+| 18 (23 w/ Belt) | 10  | 22  | 8   | 14  | 12  |
 
 ### Runes
+
 Fire · Stone · Hill · Cloud · Storm · Runic Shield
 
 ---
@@ -85,6 +90,7 @@ Fire · Stone · Hill · Cloud · Storm · Runic Shield
 ## Recommended Multiclass: Barbarian
 
 If going beyond level 20 with multiclassing, **Barbarian** synergizes strongly:
+
 - **Reckless Attack (Barb 2)** — at-will advantage on attacks, devastating with Great Weapon Master
 - **Rage** — bonus damage on every hit, Rage resistance stacks with existing non-magical piercing/slashing resistance
 - **Danger Sense (Barb 2)** — advantage on DEX saves you can see (shores up weakest save)

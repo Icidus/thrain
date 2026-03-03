@@ -56,11 +56,22 @@ let _snapshotUnsub = null;
 
 function signInWithGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider).catch(err => {
+  // Use redirect (more reliable on GitHub Pages / hosted sites than popup)
+  auth.signInWithRedirect(provider).catch(err => {
     console.error('Sign-in failed:', err);
-    showSyncStatus('Sign-in failed', 'error');
+    showSyncStatus('Sign-in failed: ' + err.message, 'error');
   });
 }
+
+// Handle the redirect result when the page loads back after Google sign-in
+auth.getRedirectResult().then(result => {
+  if (result && result.user) {
+    console.log('Redirect sign-in success:', result.user.email);
+  }
+}).catch(err => {
+  console.error('Redirect result error:', err);
+  showSyncStatus('Sign-in failed: ' + err.message, 'error');
+});
 
 function signOutUser() {
   if (!confirm('Sign out? Changes will still be saved locally.')) return;
