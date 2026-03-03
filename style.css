@@ -1796,13 +1796,262 @@ input[type="number"]:focus, input[type="text"]:focus { border-color: var(--gold-
    PRINT / PDF — black & white character sheet
    Browser: File → Print → Destination: Save as PDF
    ══════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════
+   TRADITIONAL PRINT VIEW  (#print-sheet)
+   Hidden on screen; shown during print instead of .sheet
+   ══════════════════════════════════════════════════════════════ */
+
+/* Screen: hide the print view entirely */
+#print-sheet { display: none; }
+
+/* ── Print view base layout ── */
+.ps-page {
+  width: 100%;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 9.5pt;
+  color: #000;
+  line-height: 1.25;
+  page-break-after: always;
+}
+.ps-page:last-child { page-break-after: auto; }
+
+/* ── HEADER ── */
+.ps-hdr {
+  border: 2px solid #000;
+  padding: 6px 8px 4px;
+  margin-bottom: 5px;
+}
+.ps-hdr-name {
+  font-size: 18pt;
+  font-weight: bold;
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid #000;
+  padding-bottom: 2px;
+  margin-bottom: 3px;
+}
+.ps-hdr-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 16px;
+}
+.ps-hf { display: flex; flex-direction: column-reverse; font-size: 7pt; min-width: 90px; }
+.ps-hf-v { font-size: 8.5pt; font-weight: bold; border-bottom: 1px solid #666; padding-bottom: 1px; }
+.ps-hf-l { font-size: 5.5pt; text-transform: uppercase; letter-spacing: 0.06em; color: #444; margin-top: 1px; }
+
+/* Condensed header for page 2 */
+.ps-hdr-sm { padding: 3px 8px; display: flex; align-items: center; gap: 16px; }
+.ps-hdr-name-sm { font-size: 11pt; font-weight: bold; font-variant: small-caps; }
+.ps-hdr-pg { font-size: 7.5pt; font-style: italic; color: #444; }
+
+/* ── BODY 3-COLUMN ── */
+.ps-body {
+  display: grid;
+  grid-template-columns: 136pt 1fr 140pt;
+  gap: 0 6pt;
+  align-items: start;
+}
+.ps-left, .ps-center, .ps-right {
+  display: flex;
+  flex-direction: column;
+  gap: 4pt;
+}
+
+/* ── ABILITY SCORE GRID ── */
+.ps-abl-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 3pt;
+}
+.ps-abl {
+  border: 1.5px solid #000;
+  border-radius: 3pt;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2pt 1pt;
+  text-align: center;
+}
+.ps-abl-name  { font-size: 5pt; text-transform: uppercase; letter-spacing: 0.1em; font-weight: bold; }
+.ps-abl-mod   { font-size: 16pt; font-weight: bold; line-height: 1; }
+.ps-abl-score {
+  font-size: 7.5pt;
+  border: 1px solid #888;
+  border-radius: 50%;
+  width: 18pt;
+  height: 18pt;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2pt;
+}
+
+/* ── SMALL PAIR BOXES (Inspiration / Prof Bonus) ── */
+.ps-pair-row { display: flex; gap: 4pt; }
+.ps-sm-box {
+  flex: 1;
+  border: 1.5px solid #000;
+  border-radius: 3pt;
+  text-align: center;
+  padding: 3pt 2pt;
+}
+.ps-sm-v { font-size: 13pt; font-weight: bold; }
+.ps-sm-l { font-size: 5pt; text-transform: uppercase; letter-spacing: 0.06em; }
+
+/* ── LIST BLOCKS (Saves, Senses) ── */
+.ps-list-block {
+  border: 1.5px solid #000;
+  border-radius: 3pt;
+  padding: 3pt 5pt;
+}
+.ps-list-title {
+  font-size: 6pt;
+  text-transform: uppercase;
+  font-weight: bold;
+  letter-spacing: 0.08em;
+  border-bottom: 1px solid #888;
+  margin: -3pt -5pt 3pt;
+  padding: 2pt 5pt;
+  background: #f0f0f0;
+}
+.ps-prow {
+  display: flex;
+  align-items: baseline;
+  gap: 3pt;
+  font-size: 8pt;
+  border-bottom: 0.5px dotted #ccc;
+  padding: 1pt 0;
+}
+.ps-prow:last-child { border-bottom: none; }
+.ps-prow-v  { font-weight: bold; min-width: 22pt; text-align: right; flex-shrink: 0; font-size: 8pt; }
+.ps-prow-n  { flex: 1; font-size: 8pt; }
+.ps-prow-a  { font-size: 6pt; color: #444; flex-shrink: 0; }
+.ps-senses-note { font-size: 6.5pt; font-style: italic; margin-top: 2pt; color: #333; }
+
+/* ── COMBAT STATS ROW ── */
+.ps-combat-row { display: flex; gap: 4pt; }
+.ps-cbox {
+  flex: 1;
+  border: 2px solid #000;
+  border-radius: 3pt;
+  text-align: center;
+  padding: 4pt 2pt;
+}
+.ps-cbox-v { font-size: 16pt; font-weight: bold; line-height: 1; }
+.ps-cbox-l { font-size: 5pt; text-transform: uppercase; letter-spacing: 0.07em; }
+
+/* ── HP BLOCK ── */
+.ps-hp-block { border: 1.5px solid #000; border-radius: 3pt; padding: 3pt 5pt; }
+.ps-hp-max   { display: flex; justify-content: space-between; align-items: center; margin-bottom: 3pt; border-bottom: 1px solid #888; padding-bottom: 2pt; }
+.ps-hp-max-lbl { font-size: 6pt; text-transform: uppercase; letter-spacing: 0.06em; }
+.ps-hp-max-v   { font-size: 13pt; font-weight: bold; }
+.ps-hp-curr { margin-bottom: 3pt; }
+.ps-hp-lbl  { font-size: 5.5pt; text-transform: uppercase; letter-spacing: 0.05em; display: block; color: #444; }
+.ps-hp-line { border-bottom: 1px solid #000; min-height: 14pt; font-size: 11pt; font-weight: bold; }
+
+/* ── HIT DICE / DEATH SAVES ── */
+.ps-hd-ds-row { display: flex; gap: 4pt; }
+.ps-hd-box {
+  flex: 1;
+  border: 1.5px solid #000;
+  border-radius: 3pt;
+  padding: 3pt 5pt;
+}
+.ps-hd-lbl  { font-size: 5.5pt; text-transform: uppercase; letter-spacing: 0.05em; }
+.ps-hd-v    { font-size: 11pt; font-weight: bold; }
+.ps-hd-used { font-size: 6.5pt; }
+.ps-ds-box  { flex: 1; border: 1.5px solid #000; border-radius: 3pt; padding: 3pt 5pt; }
+.ps-ds-lbl  { font-size: 5.5pt; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 2pt; }
+.ps-ds-row  { font-size: 7.5pt; border-bottom: 0.5px dotted #ccc; padding: 1pt 0; }
+
+/* ── GENERIC SECTION BOX ── */
+.ps-section { border: 1.5px solid #000; border-radius: 3pt; padding: 3pt 5pt; }
+.ps-sec-title {
+  font-size: 5.5pt;
+  text-transform: uppercase;
+  font-weight: bold;
+  letter-spacing: 0.1em;
+  border-bottom: 1pt solid #000;
+  margin: -3pt -5pt 3pt;
+  padding: 2pt 5pt;
+  background: #f0f0f0;
+}
+.ps-sec-title-lg { font-size: 7.5pt; border-bottom: 2pt solid #000; margin-bottom: 6pt; background: none; }
+
+/* ── ATTACKS TABLE ── */
+.ps-atk {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 7.5pt;
+}
+.ps-atk th {
+  border: 1pt solid #888;
+  padding: 1pt 3pt;
+  font-size: 6pt;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: #f0f0f0;
+  text-align: left;
+}
+.ps-atk td {
+  border: 0.5pt solid #ccc;
+  padding: 1.5pt 3pt;
+  vertical-align: top;
+}
+.ps-fn { font-size: 6pt; font-style: italic; margin-top: 2pt; color: #333; line-height: 1.3; }
+
+/* ── SKILLS (2-column on center panel) ── */
+.ps-skills-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+
+/* ── EQUIPMENT LIST ── */
+.ps-eq-list { display: flex; flex-direction: column; gap: 1.5pt; }
+.ps-eq      { font-size: 7.5pt; border-bottom: 0.5px solid #ddd; padding: 1pt 0; }
+.ps-eq-n    { font-weight: bold; display: block; }
+.ps-eq-d    { font-size: 6.5pt; color: #333; }
+
+/* ── PROFS BLOCK ── */
+.ps-prof-block { display: flex; flex-direction: column; gap: 3pt; }
+.ps-prof-group { font-size: 7.5pt; border-bottom: 0.5px dotted #ccc; padding-bottom: 2pt; }
+.ps-prof-group strong { font-size: 6pt; text-transform: uppercase; letter-spacing: 0.06em; display: block; color: #333; }
+
+/* ── XP SUMMARY ── */
+.ps-xp-val  { font-size: 11pt; font-weight: bold; }
+.ps-xp-note { font-size: 7pt; color: #333; }
+
+/* ── PAGE 2 ── */
+.ps-body-2col { grid-template-columns: 1fr 160pt; }
+.ps-wide { display: flex; flex-direction: column; gap: 4pt; }
+.ps-feat { border-left: 2pt solid #888; padding: 2pt 0 2pt 5pt; margin-bottom: 4pt; font-size: 8pt; }
+.ps-feat-n { font-weight: bold; font-size: 8.5pt; }
+.ps-feat-d { color: #222; margin-top: 1pt; }
+.ps-narrow { display: flex; flex-direction: column; gap: 4pt; }
+.ps-notes { font-size: 7.5pt; min-height: 200pt; border-top: 0.5px dotted #ccc; padding-top: 3pt; }
+
+/* ══════════════════════════════════════════════════════════════
+   @media print
+   ══════════════════════════════════════════════════════════════ */
 @media print {
   @page {
     size: letter portrait;
-    margin: 0.45in 0.4in;
+    margin: 0.4in;
   }
 
-  /* ── GLOBAL: strip all colour, no backgrounds ── */
+  /* Show print view, hide the screen sheet */
+  #print-sheet {
+    display: block !important;
+  }
+  #character-sheet,
+  .toolbar,
+  #auth-bar,
+  .quick-ref-bar,
+  .battle-tracker,
+  .sheet-footer { display: none !important; }
+
   * {
     color: #000 !important;
     background: transparent !important;
@@ -1814,212 +2063,17 @@ input[type="number"]:focus, input[type="text"]:focus { border-color: var(--gold-
     print-color-adjust: economy !important;
   }
 
-  body { font-size: 10.5px; }
+  /* Re-apply the print-view backgrounds needed for section titles */
+  .ps-list-title,
+  .ps-sec-title,
+  .ps-atk th { background: #ddd !important; }
 
-  /* ── HIDE INTERACTIVE / SCREEN-ONLY ELEMENTS ── */
-  .no-print,
-  .toolbar,
-  .quick-ref-bar,
-  .battle-tracker,
-  .dyn-delete,
-  .btn-add-inline,
-  .tool-subitems-toggle,
-  .equip-delete,
-  .equip-add-row,
-  .equip-tabs,
-  .equip-filter-row,
-  #auth-bar,
-  .sync-status,
-  .journal-add-btn,
-  .journal-xp-preview,
-  .journal-checkbox,
-  .tool-subitems-list { display: none !important; }
-
-  /* ── SHEET CONTAINER ── */
-  .sheet {
-    max-width: 100%;
-    width: 100%;
-    margin: 0;
-    border: none !important;
-    border-radius: 0;
-    padding: 0;
-  }
-
-  /* ── HEADER: dark bar → simple ruled box ── */
-  .sheet-header {
-    border: 2px solid #000 !important;
-    border-radius: 0 !important;
-    padding: 6px 10px;
-  }
-  .character-name  { font-size: 1.4rem; font-weight: bold; border-bottom: 1px solid #000 !important; padding-bottom: 2px; }
-  .char-sub-title  { font-size: 0.7rem; }
-  .char-info-fields { gap: 6px; }
-  .char-field-value { font-size: 0.68rem; border-bottom: 1px dotted #666 !important; min-width: 60px; }
-  .char-field-label { font-size: 0.55rem; }
-
-  /* ── 3-COLUMN BODY ── */
-  .sheet-body {
+  .ps-body, .ps-body-2col, .ps-abl-grid, .ps-pair-row,
+  .ps-combat-row, .ps-hd-ds-row, .ps-skills-grid {
     display: grid !important;
-    grid-template-columns: 155px 1fr 185px !important;
-    gap: 0 6px !important;
-    padding: 5px 0 !important;
-    align-items: start !important;
   }
-  .col-left, .col-center, .col-right {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 4px !important;
-    padding: 0 !important;
-  }
-
-  /* ── SECTIONS ── */
-  .section {
-    break-inside: avoid;
-    border: 1px solid #888 !important;
-    border-radius: 2px !important;
-    padding: 3px 5px !important;
-    margin: 0 !important;
-  }
-  .section-title {
-    font-size: 0.55rem !important;
-    font-weight: bold !important;
-    letter-spacing: 0.1em !important;
-    text-transform: uppercase !important;
-    border-bottom: 1px solid #888 !important;
-    padding: 1px 0 2px !important;
-    margin: -3px -5px 3px !important;
-  }
-  .sub-section-title { font-size: 0.6rem !important; border-bottom: 1px solid #ccc !important; }
-
-  /* ── ABILITY SCORES ── */
-  .abilities-grid { gap: 2px !important; }
-  .ability-block {
-    border: 1px solid #888 !important;
-    border-radius: 2px !important;
-    padding: 3px 2px !important;
-    text-align: center;
-  }
-  .ability-modifier { font-size: 1.3rem !important; font-weight: bold; }
-  .ability-name     { font-size: 0.45rem !important; }
-  .ability-score    { font-size: 0.6rem !important; border-top: 1px solid #ccc !important; }
-
-  /* ── SAVES / SKILLS ── */
-  .save-row  { padding: 1px 2px; font-size: 0.68rem; border-bottom: 1px solid #eee !important; }
-  .skill-row { padding: 1px 2px; font-size: 0.68rem; border-bottom: 1px solid #eee !important; }
-  .skill-val { font-size: 0.7rem; font-weight: bold; min-width: 18px; }
-  .skill-name { font-size: 0.68rem; }
-  .skills-list .skill-group-header {
-    font-size: 0.55rem !important;
-    border-bottom: 1px solid #666 !important;
-  }
-
-  /* ── HP / COMBAT STATS ── */
-  .big-stat          { font-size: 1.5rem !important; font-weight: bold; }
-  .hp-input          { font-size: 1.3rem !important; padding: 2px !important; border: 1px solid #888 !important; }
-  .hp-block          { padding: 4px !important; border: 1px solid #888 !important; }
-  .stat-block-mini   { padding: 3px !important; border: 1px solid #888 !important; }
-  .stat-mini-val     { font-size: 1.0rem !important; font-weight: bold; }
-  .stat-mini-label   { font-size: 0.5rem !important; }
-  .combat-stats-row  { gap: 3px !important; }
-  .combat-stat-val   { font-size: 1.1rem !important; font-weight: bold; }
-  .combat-stat-label { font-size: 0.5rem !important; }
-  .death-save-row    { font-size: 0.65rem; }
-
-  /* ── PROF / PASSIVE ── */
-  .proficiency-value { font-size: 1.1rem !important; font-weight: bold; }
-
-  /* ── WEAPONS TABLE ── */
-  .weapons-table { font-size: 0.65rem; width: 100%; border-collapse: collapse; }
-  .weapons-table th { border: 1px solid #666 !important; font-size: 0.55rem; padding: 1px 3px; }
-  .weapons-table td { border: 1px solid #ccc !important; padding: 1px 3px; }
-
-  /* ── RUNE CARDS ── */
-  .rune-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 3px !important; }
-  .rune-card {
-    border: 1px solid #888 !important;
-    border-radius: 2px !important;
-    border-top: 2px solid #000 !important;
-    padding: 3px 5px !important;
-  }
-  .rune-name       { font-size: 0.6rem !important; font-weight: bold; border-bottom: 1px solid #999 !important; padding-bottom: 1px; }
-  .rune-dc-value   { font-size: 1.2rem !important; font-weight: bold; }
-  .rune-dc-label   { font-size: 0.48rem !important; }
-  .rune-tracker    { gap: 2px; }
-  .rune-more       { font-size: 0.55rem !important; }
-  .rune-slots-row  { font-size: 0.6rem; }
-
-  /* ── RACIAL ABILITIES ── */
-  .racial-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 3px !important; }
-  .racial-block {
-    border: 1px solid #888 !important;
-    border-radius: 2px !important;
-    padding: 3px 5px !important;
-  }
-  .racial-block strong { font-size: 0.7rem !important; font-weight: bold; }
-  .racial-block p      { font-size: 0.65rem !important; }
-
-  /* ── FEATS ── */
-  .feats-grid   { gap: 4px !important; }
-  .feat-card {
-    border: 1px solid #888 !important;
-    border-left: 2px solid #000 !important;
-    border-radius: 0 2px 2px 0 !important;
-    padding: 3px 5px !important;
-  }
-  .feat-name   { font-size: 0.7rem !important; font-weight: bold; }
-  .feat-desc   { font-size: 0.65rem !important; }
-
-  /* ── EQUIPMENT ── */
-  .equip-item.hidden  { display: flex !important; }
-  .equip-list         { max-height: none !important; overflow: visible !important; }
-  .equipment-full     { padding: 0 !important; }
-  .equip-item         { font-size: 0.68rem; padding: 1px 3px; border-bottom: 1px solid #eee !important; }
-  .equip-name         { font-size: 0.68rem; }
-  .equip-note         { font-size: 0.6rem; }
-  .equip-weight       { font-size: 0.6rem; }
-  .equip-section-header .section-title { font-size: 0.58rem !important; }
-
-  /* ── FULL-WIDTH SECTIONS ── */
-  .sheet-full-width { gap: 5px !important; padding: 0 !important; }
-
-  /* ── TOOLS / LANGUAGES ── */
-  .lang-tools-stacked { gap: 3px !important; }
-  .dyn-list-item      { padding: 1px 0; font-size: 0.68rem; border-bottom: 1px solid #eee !important; }
-  .dyn-item-note      { font-size: 0.6rem; }
-
-  /* ── COMBAT RESOURCES ── */
-  .res-table { font-size: 0.65rem; border-collapse: collapse; width: 100%; }
-  .res-table th { border: 1px solid #666 !important; font-size: 0.55rem; padding: 1px 3px; }
-  .res-table td { border: 1px solid #ccc !important; padding: 1px 3px; }
-  .slot-pip { border: 1px solid #666 !important; }
-
-  /* ── XP / THRESHOLDS ── */
-  .xp-bar-outer { border: 1px solid #999 !important; }
-  .xp-bar-fill  { border-right: 1px solid #999 !important; }
-  .threshold-table { font-size: 0.63rem; border-collapse: collapse; }
-  .threshold-table th { border: 1px solid #666 !important; padding: 1px 4px; font-size: 0.55rem; }
-  .threshold-table td { border: 1px solid #ccc !important; padding: 1px 4px; }
-
-  /* ── NOTES ── */
-  .notes-area { min-height: 50px; font-size: 0.7rem; border: 1px solid #888 !important; }
-
-  /* ── JOURNAL ── */
-  .journal-entry { font-size: 0.65rem; padding: 1px 4px; border-bottom: 1px solid #eee !important; }
-
-  /* ── BADGES / PIPS: keep visible but outline only ── */
-  .badge-resist, .badge-immune, .badge-adv, .badge-gold,
-  .expertise-badge, .adv-badge, .disadv-badge {
-    border: 1px solid #666 !important;
-    border-radius: 2px !important;
-    font-size: 0.5rem !important;
-    padding: 0 2px !important;
-  }
-
-  /* ── PAGE BREAKS ── */
-  .rune-section            { page-break-before: always; }
-  .racial-section          { break-inside: avoid; }
-  .combat-features-section { break-inside: avoid; }
-  .equipment-section       { break-inside: avoid; }
-  .feats-section           { break-inside: avoid; }
-  .journal-section         { break-inside: avoid; }
+  .ps-left, .ps-center, .ps-right, .ps-wide, .ps-narrow,
+  .ps-eq-list, .ps-prof-block { display: flex !important; }
+  .ps-abl, .ps-sm-box, .ps-cbox { display: flex !important; flex-direction: column !important; align-items: center !important; }
+  .ps-hdr-fields, .ps-pair-row, .ps-prow, .ps-hp-max, .ps-hd-ds-row, .ps-combat-row { display: flex !important; }
 }

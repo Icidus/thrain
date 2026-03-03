@@ -1524,13 +1524,271 @@ function escapeHtml(str) {
 // PRINT & PDF EXPORT
 // ─────────────────────────────────────────────────────────────
 
+function buildPrintSheet() {
+  const by = id => document.getElementById(id)?.textContent?.trim() || '';
+  const dk = key => {
+    const el = document.querySelector(`[data-key="${key}"]`);
+    if (!el) return '';
+    return el.value !== undefined && el.tagName !== 'SPAN' && el.tagName !== 'DIV'
+      ? el.value : el.textContent.trim();
+  };
+
+  // Character info
+  const name    = dk('char_name')    || 'Thrain Ironhammerson';
+  const classLv = dk('class_level')  || 'Fighter 20';
+  const bg      = dk('background')   || '';
+  const player  = dk('player')       || '';
+  const race    = dk('race')         || '';
+  const align   = dk('alignment')    || '';
+  const xpRaw   = parseInt(dk('current_xp') || '355000', 10);
+
+  // Stats
+  const beltOn  = document.getElementById('belt-active')?.checked ?? false;
+  const sc = s => { let v = parseInt(dk(`stat_${s}`) || '10', 10); if (s==='str' && beltOn) v = Math.max(v, 23); return v; };
+  const sm = s => Math.floor((sc(s) - 10) / 2);
+  const fm = n => (n >= 0 ? '+' : '') + n;
+  const SNAMES = { str:'Strength', dex:'Dexterity', con:'Constitution', int:'Intelligence', wis:'Wisdom', cha:'Charisma' };
+
+  // Prof bonus
+  const profText   = by('prof-bonus-display') || '+7';
+  const prof       = parseInt(profText.replace('+',''), 10);
+
+  // Combat
+  const ac         = by('ac-display')          || '20';
+  const init       = by('initiative-display')  || '+0';
+  const speed      = dk('speed')               || '25';
+  const maxHP      = dk('max_hp')              || '304';
+  const currHP     = dk('current_hp')          || '';
+  const tempHP     = dk('temp_hp')             || '';
+  const hd         = dk('hit_dice')            || '20d10';
+  const hdUsed     = dk('hit_dice_used')       || '0';
+  const insp       = document.querySelector('[data-key="inspiration"]')?.checked ? '✓' : '—';
+
+  // Saves
+  const SAVES = [
+    { label:'Strength',     id:'save-str', prof:false },
+    { label:'Dexterity',    id:'save-dex', prof:false },
+    { label:'Constitution', id:'save-con', prof:true  },
+    { label:'Intelligence', id:'save-int', prof:false },
+    { label:'Wisdom',       id:'save-wis', prof:true  },
+    { label:'Charisma',     id:'save-cha', prof:false },
+  ];
+
+  // Skills
+  const PROFS_BY_KEY = new Set(Object.keys(PROF_SKILLS_MAP));
+  const DBL   = DOUBLE_PROF_SKILLS;
+  const SKILLS = [
+    { id:'sk-athletics',    label:'Athletics',      abi:'STR', p:'athletics'   },
+    { id:'sk-acrobatics',   label:'Acrobatics',     abi:'DEX', p:null          },
+    { id:'sk-sleight',      label:'Sleight of Hand',abi:'DEX', p:'sleight'     },
+    { id:'sk-stealth',      label:'Stealth',        abi:'DEX', p:null          },
+    { id:'sk-arcana',       label:'Arcana',         abi:'INT', p:'arcana'      },
+    { id:'sk-history',      label:'History',        abi:'INT', p:null          },
+    { id:'sk-investigation',label:'Investigation',  abi:'INT', p:null          },
+    { id:'sk-nature',       label:'Nature',         abi:'INT', p:null          },
+    { id:'sk-religion',     label:'Religion',       abi:'INT', p:null          },
+    { id:'sk-animal',       label:'Animal Handling',abi:'WIS', p:null          },
+    { id:'sk-insight',      label:'Insight',        abi:'WIS', p:'insight'     },
+    { id:'sk-medicine',     label:'Medicine',       abi:'WIS', p:null          },
+    { id:'sk-perception',   label:'Perception',     abi:'WIS', p:'perception'  },
+    { id:'sk-survival',     label:'Survival',       abi:'WIS', p:'survival'    },
+    { id:'sk-deception',    label:'Deception',      abi:'CHA', p:'deception'   },
+    { id:'sk-intimidation', label:'Intimidation',   abi:'CHA', p:null          },
+    { id:'sk-performance',  label:'Performance',    abi:'CHA', p:null          },
+    { id:'sk-persuasion',   label:'Persuasion',     abi:'CHA', p:null          },
+  ];
+
+  // Passive senses
+  const passPerc = by('passive-perception') || '14';
+  const passIns  = by('passive-insight')    || '16';
+
+  // XP
+  const xpNeeded    = by('xp-needed')       || '';
+  const levelLabel  = by('xp-level-label')  || '';
+  const journalAmt  = by('journal-xp-value')|| '';
+
+  // Weapons (attack values from live DOM)
+  const atk = id => document.getElementById(id)?.textContent?.trim() || '—';
+
+  // ── HTML generators ─────────────────────────────────────────
+  const abilityBox = s => `
+    <div class="ps-abl">
+      <div class="ps-abl-name">${SNAMES[s].toUpperCase().slice(0,3)}</div>
+      <div class="ps-abl-mod">${fm(sm(s))}</div>
+      <div class="ps-abl-score">${sc(s)}</div>
+    </div>`;
+
+  const saveRow = s => {
+    const dot = s.prof ? '●' : '○';
+    return `<div class="ps-prow">${dot}<span class="ps-prow-v">${by(s.id)}</span><span class="ps-prow-n">${s.label}</span></div>`;
+  };
+
+  const skillRow = sk => {
+    const isProf = sk.p && PROFS_BY_KEY.has(sk.p);
+    const isDbl  = sk.p && DBL.has(sk.p);
+    const dot    = isDbl ? '◆' : (isProf ? '●' : '○');
+    return `<div class="ps-prow">${dot}<span class="ps-prow-v">${by(sk.id)}</span><span class="ps-prow-n">${sk.label}</span><span class="ps-prow-a">${sk.abi}</span></div>`;
+  };
+
+  const equipRows = equipmentItems.map(e =>
+    `<div class="ps-eq"><span class="ps-eq-n">${escapeHtml(e.name)}</span>${e.desc ? `<span class="ps-eq-d">${escapeHtml(e.desc)}</span>` : ''}</div>`
+  ).join('');
+
+  const langText = languageItems.map(l => escapeHtml(l.name) + (l.note ? ` (${escapeHtml(l.note)})` : '')).join(' · ');
+  const toolText = toolItems.map(t => escapeHtml(t.name) + (t.note ? ` — ${escapeHtml(t.note)}` : '')).join(' · ');
+
+  const featHTML = featItems.map(f =>
+    `<div class="ps-feat"><div class="ps-feat-n">${escapeHtml(f.name)}</div><div class="ps-feat-d">${escapeHtml(f.desc)}</div></div>`
+  ).join('');
+
+  const notes = dk('notes') || '';
+
+  // ── PAGE 1 ───────────────────────────────────────────────────
+  const page1 = `
+<div class="ps-page" id="ps-p1">
+  <header class="ps-hdr">
+    <div class="ps-hdr-name">${escapeHtml(name)}</div>
+    <div class="ps-hdr-fields">
+      ${[
+        [escapeHtml(classLv), 'Class &amp; Level'],
+        [escapeHtml(bg),      'Background'],
+        [escapeHtml(player),  'Player Name'],
+        [escapeHtml(race),    'Race'],
+        [escapeHtml(align),   'Alignment'],
+        [xpRaw.toLocaleString(), 'Experience Points'],
+      ].map(([v,l]) => `<div class="ps-hf"><div class="ps-hf-v">${v || '&nbsp;'}</div><div class="ps-hf-l">${l}</div></div>`).join('')}
+    </div>
+  </header>
+  <div class="ps-body">
+
+    <!-- LEFT: Abilities + Saves + Senses -->
+    <div class="ps-left">
+      <div class="ps-abl-grid">
+        ${ ['str','dex','con','int','wis','cha'].map(abilityBox).join('') }
+      </div>
+      <div class="ps-pair-row">
+        <div class="ps-sm-box"><div class="ps-sm-v">${insp}</div><div class="ps-sm-l">INSPIRATION</div></div>
+        <div class="ps-sm-box"><div class="ps-sm-v">${profText}</div><div class="ps-sm-l">PROF BONUS</div></div>
+      </div>
+      <div class="ps-list-block">
+        <div class="ps-list-title">SAVING THROWS</div>
+        ${SAVES.map(saveRow).join('')}
+      </div>
+      <div class="ps-list-block">
+        <div class="ps-list-title">SENSES</div>
+        <div class="ps-prow">●<span class="ps-prow-v">${passPerc}</span><span class="ps-prow-n">Passive Perception</span></div>
+        <div class="ps-prow">●<span class="ps-prow-v">${passIns}</span><span class="ps-prow-n">Passive Insight</span></div>
+        <div class="ps-prow">○<span class="ps-prow-v">${fm(sm('int'))}</span><span class="ps-prow-n">Passive Investigation</span></div>
+        <div class="ps-senses-note">Darkvision 60 ft · Stonecunning</div>
+      </div>
+    </div>
+
+    <!-- CENTER: Combat + Attacks + Skills -->
+    <div class="ps-center">
+      <div class="ps-combat-row">
+        <div class="ps-cbox"><div class="ps-cbox-v">${ac}</div><div class="ps-cbox-l">ARMOR CLASS</div></div>
+        <div class="ps-cbox"><div class="ps-cbox-v">${init}</div><div class="ps-cbox-l">INITIATIVE</div></div>
+        <div class="ps-cbox"><div class="ps-cbox-v">${speed} ft</div><div class="ps-cbox-l">SPEED</div></div>
+      </div>
+      <div class="ps-hp-block">
+        <div class="ps-hp-max"><span class="ps-hp-max-lbl">HP MAXIMUM</span><span class="ps-hp-max-v">${escapeHtml(maxHP)}</span></div>
+        <div class="ps-hp-curr"><span class="ps-hp-lbl">CURRENT HIT POINTS</span><div class="ps-hp-line">${escapeHtml(currHP)}</div></div>
+        <div class="ps-hp-curr"><span class="ps-hp-lbl">TEMPORARY HIT POINTS</span><div class="ps-hp-line">${escapeHtml(tempHP)}</div></div>
+      </div>
+      <div class="ps-hd-ds-row">
+        <div class="ps-hd-box">
+          <div class="ps-hd-lbl">HIT DICE</div>
+          <div class="ps-hd-v">${escapeHtml(hd)}</div>
+          <div class="ps-hd-used">Used: ${escapeHtml(hdUsed)}</div>
+        </div>
+        <div class="ps-ds-box">
+          <div class="ps-ds-lbl">DEATH SAVES</div>
+          <div class="ps-ds-row">Successes ○ ○ ○</div>
+          <div class="ps-ds-row">Failures &nbsp;&nbsp; ○ ○ ○</div>
+        </div>
+      </div>
+      <div class="ps-section">
+        <div class="ps-sec-title">ATTACKS &amp; SPELLCASTING</div>
+        <table class="ps-atk">
+          <thead><tr><th>Weapon / Attack</th><th>Hit</th><th>Damage &amp; Type</th></tr></thead>
+          <tbody>
+            <tr><td>Dwarven Thrower (melee)</td><td>${atk('thrower-melee-hit')}</td><td>${atk('thrower-melee-dmg')}</td></tr>
+            <tr><td>Dwarven Thrower (thrown)</td><td>${atk('thrower-thrown-hit')}</td><td>${atk('thrower-thrown-dmg')}</td></tr>
+            <tr><td>Dwarven Thrower GWM (melee)</td><td>${atk('thrower-gwm-hit')}</td><td>${atk('thrower-gwm-dmg')}</td></tr>
+            <tr><td>Dwarven Thrower SS (thrown)</td><td>${atk('thrower-ss-hit')}</td><td>${atk('thrower-ss-dmg')}</td></tr>
+            <tr><td>Halberd</td><td>${atk('halberd-hit')}</td><td>${atk('halberd-dmg')}</td></tr>
+            <tr><td>Battle Axe</td><td>${atk('axe-hit')}</td><td>${atk('axe-dmg')}</td></tr>
+          </tbody>
+        </table>
+        <div class="ps-fn">GWM: −5 to hit / +10 dmg · SS: −5 to hit / +10 dmg (ranged) · Giant's Might: +1d10 one attack/turn · Returns end of turn (thrown)</div>
+      </div>
+      <div class="ps-section">
+        <div class="ps-sec-title">SKILLS &nbsp;<span style="font-size:0.5rem;font-weight:normal">● Prof &nbsp; ◆ Expertise (×2 Prof)</span></div>
+        <div class="ps-skills-grid">
+          ${SKILLS.map(skillRow).join('')}
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Equipment + Proficiencies + XP -->
+    <div class="ps-right">
+      <div class="ps-section">
+        <div class="ps-sec-title">EQUIPMENT</div>
+        <div class="ps-eq-list">${equipRows}</div>
+      </div>
+      <div class="ps-section">
+        <div class="ps-sec-title">PROFICIENCIES &amp; LANGUAGES</div>
+        <div class="ps-prof-block">
+          <div class="ps-prof-group"><strong>Languages</strong><br/>${langText}</div>
+          <div class="ps-prof-group"><strong>Tool Prof.</strong><br/>${toolText}</div>
+          <div class="ps-prof-group"><strong>Armor</strong><br/>All armor &amp; shields</div>
+          <div class="ps-prof-group"><strong>Weapons</strong><br/>Simple &amp; martial</div>
+        </div>
+      </div>
+      <div class="ps-section">
+        <div class="ps-sec-title">EXPERIENCE POINTS</div>
+        <div class="ps-xp-val">${xpRaw.toLocaleString()} XP</div>
+        <div class="ps-xp-note">${escapeHtml(levelLabel)}</div>
+        <div class="ps-xp-note">${escapeHtml(xpNeeded)}</div>
+        <div class="ps-xp-note">Next journal: ${escapeHtml(journalAmt)}</div>
+      </div>
+    </div>
+
+  </div><!-- /ps-body -->
+</div><!-- /ps-p1 -->`;
+
+  // ── PAGE 2 ───────────────────────────────────────────────────
+  const page2 = `
+<div class="ps-page" id="ps-p2">
+  <header class="ps-hdr ps-hdr-sm">
+    <div class="ps-hdr-name-sm">${escapeHtml(name)}</div>
+    <div class="ps-hdr-pg">Features, Traits &amp; Notes</div>
+  </header>
+  <div class="ps-body ps-body-2col">
+    <div class="ps-wide">
+      <div class="ps-sec-title ps-sec-title-lg">FEATURES &amp; TRAITS</div>
+      ${featHTML}
+    </div>
+    <div class="ps-narrow">
+      <div class="ps-section">
+        <div class="ps-sec-title">BACKSTORY &amp; NOTES</div>
+        <div class="ps-notes">${escapeHtml(notes).split('\n').join('<br/>')}</div>
+      </div>
+    </div>
+  </div>
+</div><!-- /ps-p2 -->`;
+
+  const el = document.getElementById('print-sheet');
+  if (el) el.innerHTML = page1 + page2;
+}
+
 function printSheet() {
+  buildPrintSheet();
   window.print();
 }
 
 function exportPDF() {
-  // Use the browser's native print-to-PDF — respects @media print CSS
-  // In the print dialog choose "Save as PDF" as the destination
+  buildPrintSheet();
   window.print();
 }
 
