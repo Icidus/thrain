@@ -29,10 +29,10 @@ const auth = firebase.auth();
 const db   = firebase.firestore();
 
 // Enable offline persistence (works without internet at the table!)
-db.enablePersistence({ synchronizeTabs: true })
+// Note: single-tab only — avoids the deprecated enableMultiTabIndexedDbPersistence warning
+db.enablePersistence()
   .catch(err => {
     if (err.code === 'failed-precondition') {
-      // Multiple tabs open — persistence only works in one tab at a time
       console.warn('Firestore persistence: multiple tabs open, offline mode limited.');
     } else if (err.code === 'unimplemented') {
       console.warn('Firestore persistence not supported in this browser.');
@@ -56,22 +56,17 @@ let _snapshotUnsub = null;
 
 function signInWithGoogle() {
   const provider = new firebase.auth.GoogleAuthProvider();
-  // Use redirect (more reliable on GitHub Pages / hosted sites than popup)
-  auth.signInWithRedirect(provider).catch(err => {
+  // Popup is more reliable than redirect when browser tracking prevention is on
+  auth.signInWithPopup(provider).catch(err => {
     console.error('Sign-in failed:', err);
-    showSyncStatus('Sign-in failed: ' + err.message, 'error');
+    // If popup was blocked by the browser, fall back to redirect
+    if (err.code === 'auth/popup-blocked') {
+      auth.signInWithRedirect(provider);
+    } else {
+      showSyncStatus('Sign-in failed: ' + err.message, 'error');
+    }
   });
 }
-
-// Handle the redirect result when the page loads back after Google sign-in
-auth.getRedirectResult().then(result => {
-  if (result && result.user) {
-    console.log('Redirect sign-in success:', result.user.email);
-  }
-}).catch(err => {
-  console.error('Redirect result error:', err);
-  showSyncStatus('Sign-in failed: ' + err.message, 'error');
-});
 
 function signOutUser() {
   if (!confirm('Sign out? Changes will still be saved locally.')) return;
