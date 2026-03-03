@@ -168,9 +168,15 @@ function updateAuthUI(user) {
     if (signInBtn)  signInBtn.style.display  = 'none';
     if (signOutBtn) signOutBtn.style.display = 'inline-block';
     if (userInfo)   userInfo.style.display   = 'flex';
-    if (userAvatar && user.photoURL) {
-      userAvatar.src = user.photoURL;
-      userAvatar.style.display = 'inline-block';
+    if (userAvatar) {
+      if (user.photoURL) {
+        userAvatar.src = user.photoURL;
+        userAvatar.alt = user.displayName || 'User';
+        userAvatar.style.display = 'inline-block';
+      } else {
+        // No photo — show a letter avatar via CSS
+        userAvatar.style.display = 'none';
+      }
     }
     if (userName) userName.textContent = user.displayName || user.email || 'Signed In';
   } else {
