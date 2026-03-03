@@ -1083,9 +1083,8 @@ function calcJournalXP(currentXP) {
   }
   const nextLevel = currentLevel + 1;
   const nextThreshold = XP_THRESHOLDS[nextLevel];
-  const currentThreshold = XP_THRESHOLDS[currentLevel];
   if (!nextThreshold) return 0;
-  return Math.floor((nextThreshold - currentThreshold) * 0.1);
+  return Math.floor(nextThreshold * 0.1);
 }
 
 function updateJournalPreview() {
@@ -1101,12 +1100,10 @@ function updateJournalPreview() {
   }
   const nxtLv = curLv + 1;
   const nxtThresh = XP_THRESHOLDS[nxtLv];
-  const curThresh = XP_THRESHOLDS[curLv];
   const gapLabel = document.getElementById('journal-xp-gap-label');
   if (gapLabel) {
     if (nxtThresh) {
-      const gap = nxtThresh - curThresh;
-      gapLabel.textContent = `— 10% of the ${gap.toLocaleString()} XP gap (Lv ${curLv} → ${nxtLv})`;
+      gapLabel.textContent = `— 10% of ${nxtThresh.toLocaleString()} (Lv ${nxtLv} threshold)`;
     } else {
       gapLabel.textContent = '— max level reached';
     }
