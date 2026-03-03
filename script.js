@@ -1529,40 +1529,9 @@ function printSheet() {
 }
 
 function exportPDF() {
-  // Check if html2pdf is loaded
-  if (typeof html2pdf === 'undefined') {
-    alert('PDF library not loaded. Try again in a moment or use the Print button instead.');
-    return;
-  }
-
-  const btn = document.getElementById('btn-pdf');
-  if (btn) { btn.textContent = '⏳ Generating…'; btn.disabled = true; }
-
-  const element = document.getElementById('character-sheet');
-  const characterName = document.querySelector('[data-key="char_name"]')?.textContent?.trim() || 'Thrain';
-  const safeFilename = characterName.replace(/[^a-z0-9_\-]/gi, '_').replace(/_+/g, '_');
-
-  const opts = {
-    margin:      [8, 8, 8, 8],
-    filename:    `${safeFilename}_character_sheet.pdf`,
-    image:       { type: 'jpeg', quality: 0.98 },
-    html2canvas: { scale: 2, logging: false, useCORS: true, allowTaint: true },
-    jsPDF:       { unit: 'mm', format: 'letter', orientation: 'portrait' },
-    pagebreak:   { mode: ['avoid-all', 'css', 'legacy'], before: '.rune-section' },
-  };
-
-  html2pdf()
-    .set(opts)
-    .from(element)
-    .save()
-    .then(() => {
-      if (btn) { btn.textContent = '📄 Export PDF'; btn.disabled = false; }
-    })
-    .catch(err => {
-      console.error('PDF export failed:', err);
-      alert('PDF export failed. Try Print → Save as PDF instead.');
-      if (btn) { btn.textContent = '📄 Export PDF'; btn.disabled = false; }
-    });
+  // Use the browser's native print-to-PDF — respects @media print CSS
+  // In the print dialog choose "Save as PDF" as the destination
+  window.print();
 }
 
 // ─────────────────────────────────────────────────────────────
