@@ -1791,19 +1791,30 @@ input[type="number"]:focus, input[type="text"]:focus { border-color: var(--gold-
    PRINT / PDF STYLES  — comprehensive single block
    Use Print → Save as PDF in the browser for best results
    ══════════════════════════════════════════════════════════════ */
+
+/* ══════════════════════════════════════════════════════════════
+   PRINT / PDF — black & white character sheet
+   Browser: File → Print → Destination: Save as PDF
+   ══════════════════════════════════════════════════════════════ */
 @media print {
   @page {
     size: letter portrait;
-    margin: 0.4in;
+    margin: 0.45in 0.4in;
   }
 
-  /* Force background colors and images to print */
+  /* ── GLOBAL: strip all colour, no backgrounds ── */
   * {
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
+    color: #000 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    -webkit-print-color-adjust: economy !important;
+    print-color-adjust: economy !important;
   }
 
-  body { background: white !important; font-size: 11px; }
+  body { font-size: 10.5px; }
 
   /* ── HIDE INTERACTIVE / SCREEN-ONLY ELEMENTS ── */
   .no-print,
@@ -1816,140 +1827,199 @@ input[type="number"]:focus, input[type="text"]:focus { border-color: var(--gold-
   .equip-delete,
   .equip-add-row,
   .equip-tabs,
+  .equip-filter-row,
   #auth-bar,
   .sync-status,
   .journal-add-btn,
   .journal-xp-preview,
   .journal-checkbox,
-  .equip-filter-row { display: none !important; }
+  .tool-subitems-list { display: none !important; }
 
   /* ── SHEET CONTAINER ── */
   .sheet {
     max-width: 100%;
+    width: 100%;
     margin: 0;
-    border: none;
+    border: none !important;
     border-radius: 0;
-    box-shadow: none;
     padding: 0;
-    background: white !important;
   }
 
-  /* ── HEADER ── */
+  /* ── HEADER: dark bar → simple ruled box ── */
   .sheet-header {
-    background: #1a1e28 !important;
-    padding: 8px 14px;
+    border: 2px solid #000 !important;
+    border-radius: 0 !important;
+    padding: 6px 10px;
   }
-  .character-name { font-size: 1.3rem; }
-  .char-info-fields { gap: 8px; }
-  .char-field-value { font-size: 0.75rem; }
+  .character-name  { font-size: 1.4rem; font-weight: bold; border-bottom: 1px solid #000 !important; padding-bottom: 2px; }
+  .char-sub-title  { font-size: 0.7rem; }
+  .char-info-fields { gap: 6px; }
+  .char-field-value { font-size: 0.68rem; border-bottom: 1px dotted #666 !important; min-width: 60px; }
+  .char-field-label { font-size: 0.55rem; }
 
   /* ── 3-COLUMN BODY ── */
   .sheet-body {
-    grid-template-columns: 162px 1fr 192px;
-    padding: 6px 0;
-    gap: 0;
+    display: grid !important;
+    grid-template-columns: 155px 1fr 185px !important;
+    gap: 0 6px !important;
+    padding: 5px 0 !important;
+    align-items: start !important;
   }
-  .col-left, .col-center, .col-right { gap: 5px; padding: 0 4px; }
-  .col-left  { padding-left: 0; }
-  .col-right { padding-right: 0; }
+  .col-left, .col-center, .col-right {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+    padding: 0 !important;
+  }
 
   /* ── SECTIONS ── */
   .section {
     break-inside: avoid;
-    box-shadow: none !important;
-    padding: 5px 6px !important;
+    border: 1px solid #888 !important;
+    border-radius: 2px !important;
+    padding: 3px 5px !important;
     margin: 0 !important;
-    border-radius: 3px !important;
   }
   .section-title {
-    font-size: 0.58rem;
-    padding: 2px 6px;
-    margin: -5px -6px 4px;
-    letter-spacing: 0.07em;
+    font-size: 0.55rem !important;
+    font-weight: bold !important;
+    letter-spacing: 0.1em !important;
+    text-transform: uppercase !important;
+    border-bottom: 1px solid #888 !important;
+    padding: 1px 0 2px !important;
+    margin: -3px -5px 3px !important;
   }
+  .sub-section-title { font-size: 0.6rem !important; border-bottom: 1px solid #ccc !important; }
 
   /* ── ABILITY SCORES ── */
-  .abilities-grid { gap: 3px; }
-  .ability-block  { padding: 3px 2px; }
-  .ability-modifier { font-size: 1.25rem; }
-  .ability-name   { font-size: 0.48rem; }
-  .ability-score  { font-size: 0.6rem; }
+  .abilities-grid { gap: 2px !important; }
+  .ability-block {
+    border: 1px solid #888 !important;
+    border-radius: 2px !important;
+    padding: 3px 2px !important;
+    text-align: center;
+  }
+  .ability-modifier { font-size: 1.3rem !important; font-weight: bold; }
+  .ability-name     { font-size: 0.45rem !important; }
+  .ability-score    { font-size: 0.6rem !important; border-top: 1px solid #ccc !important; }
 
-  /* ── SAVES ── */
-  .save-row { padding: 1px 2px; font-size: 0.7rem; }
-
-  /* ── SKILLS ── */
-  .skill-row { padding: 1px 2px; font-size: 0.7rem; }
-  .skill-val { font-size: 0.7rem; }
-  .skill-name { font-size: 0.7rem; }
+  /* ── SAVES / SKILLS ── */
+  .save-row  { padding: 1px 2px; font-size: 0.68rem; border-bottom: 1px solid #eee !important; }
+  .skill-row { padding: 1px 2px; font-size: 0.68rem; border-bottom: 1px solid #eee !important; }
+  .skill-val { font-size: 0.7rem; font-weight: bold; min-width: 18px; }
+  .skill-name { font-size: 0.68rem; }
+  .skills-list .skill-group-header {
+    font-size: 0.55rem !important;
+    border-bottom: 1px solid #666 !important;
+  }
 
   /* ── HP / COMBAT STATS ── */
-  .big-stat  { font-size: 1.5rem; }
-  .hp-input  { font-size: 1.3rem !important; padding: 3px !important; }
-  .hp-block  { padding: 5px; }
-  .stat-block-mini { padding: 4px; }
-  .stat-mini-val { font-size: 1.1rem; }
+  .big-stat          { font-size: 1.5rem !important; font-weight: bold; }
+  .hp-input          { font-size: 1.3rem !important; padding: 2px !important; border: 1px solid #888 !important; }
+  .hp-block          { padding: 4px !important; border: 1px solid #888 !important; }
+  .stat-block-mini   { padding: 3px !important; border: 1px solid #888 !important; }
+  .stat-mini-val     { font-size: 1.0rem !important; font-weight: bold; }
+  .stat-mini-label   { font-size: 0.5rem !important; }
+  .combat-stats-row  { gap: 3px !important; }
+  .combat-stat-val   { font-size: 1.1rem !important; font-weight: bold; }
+  .combat-stat-label { font-size: 0.5rem !important; }
+  .death-save-row    { font-size: 0.65rem; }
 
-  /* ── INITIATIVE / AC / SPEED ── */
-  .combat-stats-row { gap: 4px; }
-  .combat-stat-val  { font-size: 1.2rem; }
-  .combat-stat-label { font-size: 0.55rem; }
+  /* ── PROF / PASSIVE ── */
+  .proficiency-value { font-size: 1.1rem !important; font-weight: bold; }
 
   /* ── WEAPONS TABLE ── */
-  .weapons-table { font-size: 0.67rem; }
-  .weapons-table th,
-  .weapons-table td { padding: 2px 3px; }
+  .weapons-table { font-size: 0.65rem; width: 100%; border-collapse: collapse; }
+  .weapons-table th { border: 1px solid #666 !important; font-size: 0.55rem; padding: 1px 3px; }
+  .weapons-table td { border: 1px solid #ccc !important; padding: 1px 3px; }
 
-  /* ── RUNES ── */
-  .rune-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 4px !important; }
-  .rune-card { padding: 5px 6px; }
-  .rune-name { font-size: 0.62rem; }
-  .rune-dc-value { font-size: 1.3rem; }
-  .rune-more { font-size: 0.6rem; }
+  /* ── RUNE CARDS ── */
+  .rune-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 3px !important; }
+  .rune-card {
+    border: 1px solid #888 !important;
+    border-radius: 2px !important;
+    border-top: 2px solid #000 !important;
+    padding: 3px 5px !important;
+  }
+  .rune-name       { font-size: 0.6rem !important; font-weight: bold; border-bottom: 1px solid #999 !important; padding-bottom: 1px; }
+  .rune-dc-value   { font-size: 1.2rem !important; font-weight: bold; }
+  .rune-dc-label   { font-size: 0.48rem !important; }
+  .rune-tracker    { gap: 2px; }
+  .rune-more       { font-size: 0.55rem !important; }
+  .rune-slots-row  { font-size: 0.6rem; }
 
   /* ── RACIAL ABILITIES ── */
-  .racial-grid { grid-template-columns: repeat(3, 1fr); gap: 4px; }
-  .racial-block { padding: 5px 6px; }
-
-  /* ── EQUIPMENT ── */
-  .equip-item.hidden { display: flex !important; }
-  .equip-list { max-height: none !important; overflow: visible !important; }
-  .equipment-full { padding: 0; }
-  .equip-item { font-size: 0.72rem; padding: 2px 3px; }
-
-  /* ── FULL-WIDTH SECTIONS ── */
-  .sheet-full-width { gap: 6px; padding: 0; }
-
-  /* ── TOOLS / LANGUAGES ── */
-  .tool-subitems-list  { display: none !important; }
-  .lang-tools-stacked  { gap: 4px; }
-  .dyn-list-item { padding: 1px 0; font-size: 0.7rem; }
-  .dyn-item-note { font-size: 0.62rem; }
+  .racial-grid { grid-template-columns: repeat(3, 1fr) !important; gap: 3px !important; }
+  .racial-block {
+    border: 1px solid #888 !important;
+    border-radius: 2px !important;
+    padding: 3px 5px !important;
+  }
+  .racial-block strong { font-size: 0.7rem !important; font-weight: bold; }
+  .racial-block p      { font-size: 0.65rem !important; }
 
   /* ── FEATS ── */
-  .feat-card   { padding: 5px 6px; }
-  .feat-name   { font-size: 0.72rem; }
-  .feat-desc   { font-size: 0.67rem; }
+  .feats-grid   { gap: 4px !important; }
+  .feat-card {
+    border: 1px solid #888 !important;
+    border-left: 2px solid #000 !important;
+    border-radius: 0 2px 2px 0 !important;
+    padding: 3px 5px !important;
+  }
+  .feat-name   { font-size: 0.7rem !important; font-weight: bold; }
+  .feat-desc   { font-size: 0.65rem !important; }
+
+  /* ── EQUIPMENT ── */
+  .equip-item.hidden  { display: flex !important; }
+  .equip-list         { max-height: none !important; overflow: visible !important; }
+  .equipment-full     { padding: 0 !important; }
+  .equip-item         { font-size: 0.68rem; padding: 1px 3px; border-bottom: 1px solid #eee !important; }
+  .equip-name         { font-size: 0.68rem; }
+  .equip-note         { font-size: 0.6rem; }
+  .equip-weight       { font-size: 0.6rem; }
+  .equip-section-header .section-title { font-size: 0.58rem !important; }
+
+  /* ── FULL-WIDTH SECTIONS ── */
+  .sheet-full-width { gap: 5px !important; padding: 0 !important; }
+
+  /* ── TOOLS / LANGUAGES ── */
+  .lang-tools-stacked { gap: 3px !important; }
+  .dyn-list-item      { padding: 1px 0; font-size: 0.68rem; border-bottom: 1px solid #eee !important; }
+  .dyn-item-note      { font-size: 0.6rem; }
 
   /* ── COMBAT RESOURCES ── */
-  .res-table   { font-size: 0.67rem; }
-  .res-table td, .res-table th { padding: 2px 3px; }
+  .res-table { font-size: 0.65rem; border-collapse: collapse; width: 100%; }
+  .res-table th { border: 1px solid #666 !important; font-size: 0.55rem; padding: 1px 3px; }
+  .res-table td { border: 1px solid #ccc !important; padding: 1px 3px; }
+  .slot-pip { border: 1px solid #666 !important; }
 
   /* ── XP / THRESHOLDS ── */
-  .threshold-table { font-size: 0.65rem; }
-  .threshold-table td,
-  .threshold-table th { padding: 2px 4px; }
+  .xp-bar-outer { border: 1px solid #999 !important; }
+  .xp-bar-fill  { border-right: 1px solid #999 !important; }
+  .threshold-table { font-size: 0.63rem; border-collapse: collapse; }
+  .threshold-table th { border: 1px solid #666 !important; padding: 1px 4px; font-size: 0.55rem; }
+  .threshold-table td { border: 1px solid #ccc !important; padding: 1px 4px; }
 
   /* ── NOTES ── */
-  .notes-area { min-height: 50px; font-size: 0.72rem; }
+  .notes-area { min-height: 50px; font-size: 0.7rem; border: 1px solid #888 !important; }
 
   /* ── JOURNAL ── */
-  .journal-entry { font-size: 0.67rem; padding: 2px 4px; }
+  .journal-entry { font-size: 0.65rem; padding: 1px 4px; border-bottom: 1px solid #eee !important; }
+
+  /* ── BADGES / PIPS: keep visible but outline only ── */
+  .badge-resist, .badge-immune, .badge-adv, .badge-gold,
+  .expertise-badge, .adv-badge, .disadv-badge {
+    border: 1px solid #666 !important;
+    border-radius: 2px !important;
+    font-size: 0.5rem !important;
+    padding: 0 2px !important;
+  }
 
   /* ── PAGE BREAKS ── */
-  .rune-section           { page-break-before: always; }
-  .racial-section         { break-inside: avoid; }
+  .rune-section            { page-break-before: always; }
+  .racial-section          { break-inside: avoid; }
   .combat-features-section { break-inside: avoid; }
-  .equipment-section      { break-inside: avoid; }
-  .feats-section          { break-inside: avoid; }
+  .equipment-section       { break-inside: avoid; }
+  .feats-section           { break-inside: avoid; }
+  .journal-section         { break-inside: avoid; }
 }
