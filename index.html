@@ -4,14 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Thrain Ironhammerson — Character Sheet</title>
-  <link rel="stylesheet" href="style.css?v=20260303g" />
+  <link rel="stylesheet" href="style.css?v=20260308b" />
   <!-- Firebase SDK (compat — no bundler needed) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-  <script src="firebase.js?v=20260303g"></script>
+  <script src="firebase.js?v=20260308a"></script>
+  <script src="fishing-data.js?v=20260308b"></script>
   <!-- Sheet logic -->
-  <script src="script.js?v=20260303g" defer></script>
+  <script src="script.js?v=20260308b" defer></script>
 </head>
 <body>
   <!-- TOOLBAR (hidden on print) -->
@@ -853,6 +854,40 @@
       </section>
 
     </div><!-- end sheet-full-width -->
+
+    <!-- ═══════════════════════ FISHING (FULL WIDTH) ═══════════════════════ -->
+    <div class="sheet-full-width">
+      <section class="section fishing-section no-print">
+        <div class="fishing-header">
+          <h2 class="section-title">🎣 Fishing</h2>
+          <div class="fishing-header-note">Half day = 1 attempt · Full day = 2 attempts</div>
+        </div>
+
+        <div class="fishing-controls">
+          <label class="fishing-control">
+            <span class="fishing-control-label">Fishing gear</span>
+            <select id="fishing-gear-select" data-key="fishing_gear_id" class="fishing-select" aria-label="Fishing gear selection">
+              <option value="">No fishing gear in inventory</option>
+            </select>
+          </label>
+
+          <div class="fishing-summary" id="fishing-summary">
+            Survival +0 · STR 18 (+4)
+          </div>
+
+          <div class="fishing-actions">
+            <button class="btn-small" id="fish-btn-half" type="button" onclick="fishHalfDay()">Half Day</button>
+            <button class="btn-small" id="fish-btn-full" type="button" onclick="fishFullDay()">Full Day</button>
+          </div>
+        </div>
+
+        <p class="footnote fishing-footnote" id="fishing-gear-status">Add a pole, rod, net, or Fisherman's Tools to Equipment to unlock fishing rolls.</p>
+
+        <div class="fishing-results" id="fishing-results">
+          <div class="fishing-empty">Choose fishing gear from your inventory, then roll a half-day or full-day fishing session.</div>
+        </div>
+      </section>
+    </div><!-- end fishing full-width -->
 
     <!-- ═══════════════════════ EQUIPMENT (FULL WIDTH) ═══════════════════════ -->
     <div class="sheet-full-width">

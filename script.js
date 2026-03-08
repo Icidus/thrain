@@ -76,6 +76,11 @@ const DEFAULT_SKILL_BONUSES = {
   persuasion: 0,
 };
 
+const FISHING_RARITY_ORDER = ['Nothing', 'Junk', 'Common', 'Uncommon', 'Rare', 'Very Rare', 'Legendary Fish'];
+const FISHING_GEAR_REGEX = /fish|fisher|rod|pole|net|hook|line|lure|bait|tackle/i;
+let fishingTable = {};
+let fishingPanelInitialized = false;
+
 // Multiclass counter for dynamic rows
 let mcRowCount = 1;
 
@@ -167,6 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
     featItems = DEFAULT_FEATS.map(f => ({ ...f }));
     renderFeats();
   }
+
+  initFishingPanel();
 });
 
 /** Set the footer date stamp */
@@ -362,6 +369,8 @@ function recalcAll() {
 
   // Update XP table highlights
   updateXPTableHighlights(getNum('current_xp', 355000));
+
+  renderFishingSummary();
 }
 
 /** Set text content of an element by id. */
@@ -385,6 +394,363 @@ function setModDisplay(id, modVal, subNote) {
     el.style.cursor = '';
   }
 }
+
+// ─────────────────────────────────────────────────────────────
+// FISHING MECHANIC
+// ─────────────────────────────────────────────────────────────
+
+function rollDie(sides) {
+  return Math.ceil(Math.random() * sides);
+}
+
+function parseCsvLine(line) {
+  const out = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    const next = line[i + 1];
+
+    if (ch === '"') {
+      if (inQuotes && next === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    if (ch === ',' && !inQuotes) {
+      out.push(current);
+      current = '';
+      continue;
+    }
+
+    current += ch;
+  }
+
+  out.push(current);
+  return out;
+}
+
+function normalizeFishingRarity(label) {
+  const cleaned = (label || '').trim();
+  if (FISHING_RARITY_ORDER.includes(cleaned)) return cleaned;
+  return '';
+}
+
+function ensureFishingTableLoaded() {
+  if (Object.keys(fishingTable).length > 0) return fishingTable;
+
+  const csv = window.FISHING_TABLE_CSV || '';
+  if (!csv.trim()) {
+    fishingTable = {};
+    return fishingTable;
+  }
+
+  const parsed = {
+    Nothing: [],
+    Junk: [],
+    Common: [],
+    Uncommon: [],
+    Rare: [],
+    'Very Rare': [],
+    'Legendary Fish': [],
+  };
+
+  let currentRarity = '';
+  csv.split(/\r?\n/).forEach(rawLine => {
+    const line = rawLine.trim();
+    if (!line) return;
+
+    const cols = parseCsvLine(line);
+    const rollCell = (cols[0] || '').trim();
+    const labelCell = (cols[1] || '').trim();
+    const rarity = normalizeFishingRarity(labelCell);
+
+    if (rarity) {
+      currentRarity = rarity;
+      return;
+    }
+
+    if (rollCell === 'Roll' || !currentRarity) return;
+    if (!/^\d+$/.test(rollCell)) return;
+
+    parsed[currentRarity].push({
+      roll: parseInt(rollCell, 10),
+      name: labelCell,
+      description: (cols[2] || '').trim(),
+      fishingDC: parseInt(cols[5], 10) || 0,
+      ps: parseInt(cols[6], 10) || 0,
+    });
+  });
+
+  fishingTable = parsed;
+  return fishingTable;
+}
+
+function getFishingGearItems() {
+  return equipmentItems.filter(item => {
+    const haystack = `${item.name || ''} ${item.desc || ''}`;
+    return FISHING_GEAR_REGEX.test(haystack);
+  });
+}
+
+function getFishingBackgroundAdvantage() {
+  const bgEl = document.querySelector('[data-key="background"]');
+  const bgText = bgEl?.textContent?.trim() || '';
+  return /fisher/i.test(bgText);
+}
+
+function getCurrentStrengthScore() {
+  const beltActive = document.getElementById('belt-active')?.checked ?? false;
+  const rawStr = getNum('stat_str', 18);
+  return beltActive ? Math.max(rawStr, BELT_STR) : rawStr;
+}
+
+function getCurrentStrengthMod() {
+  return mod(getCurrentStrengthScore());
+}
+
+function getDisplayedModifier(id, fallback = 0) {
+  const text = document.getElementById(id)?.textContent?.trim();
+  const value = parseInt(text, 10);
+  return Number.isFinite(value) ? value : fallback;
+}
+
+function getFishingRarity(total) {
+  if (total >= 29) return 'Legendary Fish';
+  if (total >= 25) return 'Very Rare';
+  if (total >= 22) return 'Rare';
+  if (total >= 19) return 'Uncommon';
+  if (total >= 14) return 'Common';
+  if (total >= 10) return 'Junk';
+  return 'Nothing';
+}
+
+function renderFishingSummary() {
+  const summaryEl = document.getElementById('fishing-summary');
+  if (!summaryEl) return;
+
+  const survivalMod = getDisplayedModifier('sk-survival', 0);
+  const strScore = getCurrentStrengthScore();
+  const strMod = getCurrentStrengthMod();
+  const advantageNote = getFishingBackgroundAdvantage() ? ' · Fisherman ADV' : '';
+
+  summaryEl.textContent = `Survival ${fmtMod(survivalMod)} · STR ${strScore} (${fmtMod(strMod)})${advantageNote}`;
+}
+
+function renderFishingGearOptions() {
+  const select = document.getElementById('fishing-gear-select');
+  const status = document.getElementById('fishing-gear-status');
+  const halfBtn = document.getElementById('fish-btn-half');
+  const fullBtn = document.getElementById('fish-btn-full');
+  if (!select) return;
+
+  ensureFishingTableLoaded();
+
+  const availableGear = getFishingGearItems();
+  const savedValue = select.value;
+  select.innerHTML = '';
+
+  if (availableGear.length === 0) {
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = 'No fishing gear in inventory';
+    select.appendChild(option);
+    select.disabled = true;
+    if (halfBtn) halfBtn.disabled = true;
+    if (fullBtn) fullBtn.disabled = true;
+    if (status) status.textContent = 'Add a pole, rod, net, or Fisherman\'s Tools to Equipment to unlock fishing rolls.';
+    return;
+  }
+
+  availableGear.forEach(item => {
+    const option = document.createElement('option');
+    option.value = item.id;
+    option.textContent = item.desc ? `${item.name} — ${item.desc}` : item.name;
+    select.appendChild(option);
+  });
+
+  select.disabled = false;
+  select.value = availableGear.some(item => item.id === savedValue) ? savedValue : availableGear[0].id;
+  if (halfBtn) halfBtn.disabled = false;
+  if (fullBtn) fullBtn.disabled = false;
+
+  const advantageText = getFishingBackgroundAdvantage()
+    ? 'Fisherman background advantage is applied automatically on the Survival rarity roll.'
+    : 'Survival rarity roll is normal unless your DM grants advantage.';
+  if (status) status.textContent = `${advantageText} Luck is always an unmodified d20.`;
+}
+
+function getSelectedFishingGear() {
+  const selectedId = document.getElementById('fishing-gear-select')?.value;
+  return getFishingGearItems().find(item => item.id === selectedId) || null;
+}
+
+function getFishingEntry(rarity, luckRoll) {
+  ensureFishingTableLoaded();
+  return (fishingTable[rarity] || []).find(entry => entry.roll === luckRoll) || null;
+}
+
+function formatFishingRarityClass(rarity) {
+  return rarity.toLowerCase().replace(/[^a-z]+/g, '-');
+}
+
+function extractSaleText(description) {
+  const match = (description || '').match(/Sells for[^.]*\./i);
+  return match ? match[0] : '';
+}
+
+function resolveFishingAttempt(attemptNumber, gear) {
+  const survivalMod = getDisplayedModifier('sk-survival', 0);
+  const hasAdvantage = getFishingBackgroundAdvantage();
+  const survivalRollA = rollDie(20);
+  const survivalRollB = hasAdvantage ? rollDie(20) : null;
+  const chosenSurvival = hasAdvantage ? Math.max(survivalRollA, survivalRollB) : survivalRollA;
+  const rarityTotal = chosenSurvival + survivalMod;
+  const rarity = getFishingRarity(rarityTotal);
+
+  const result = {
+    attemptNumber,
+    gear,
+    survivalMod,
+    hasAdvantage,
+    survivalRollA,
+    survivalRollB,
+    chosenSurvival,
+    rarityTotal,
+    rarity,
+    luckRoll: null,
+    entry: null,
+    strengthRequired: false,
+    strengthScore: getCurrentStrengthScore(),
+    strengthMod: getCurrentStrengthMod(),
+    strengthRoll: null,
+    strengthTotal: null,
+    strengthSuccess: true,
+  };
+
+  if (rarity === 'Nothing') return result;
+
+  result.luckRoll = rollDie(20);
+  result.entry = getFishingEntry(rarity, result.luckRoll);
+
+  if (!result.entry) return result;
+
+  const fishPs = Number(result.entry.ps) || 0;
+  if (fishPs >= result.strengthScore && fishPs > 0) {
+    result.strengthRequired = true;
+    result.strengthRoll = rollDie(20);
+    result.strengthTotal = result.strengthRoll + result.strengthMod;
+    result.strengthSuccess = result.strengthTotal >= fishPs;
+  }
+
+  return result;
+}
+
+function renderFishingAttemptCard(result) {
+  const rarityClass = formatFishingRarityClass(result.rarity);
+  const survivalRollText = result.hasAdvantage
+    ? `${result.survivalRollA} / ${result.survivalRollB} → ${result.chosenSurvival}`
+    : `${result.survivalRollA}`;
+
+  if (result.rarity === 'Nothing') {
+    return `
+      <article class="fishing-card fishing-card-${rarityClass}">
+        <div class="fishing-card-head">
+          <div class="fishing-card-title">Attempt ${result.attemptNumber}</div>
+          <span class="fishing-rarity-badge fishing-rarity-${rarityClass}">${escapeHtml(result.rarity)}</span>
+        </div>
+        <div class="fishing-roll-line"><strong>Gear:</strong> ${escapeHtml(result.gear.name)}</div>
+        <div class="fishing-roll-line"><strong>Survival:</strong> d20 ${result.hasAdvantage ? '(adv)' : ''} = ${survivalRollText}; ${fmtMod(result.survivalMod)} → <strong>${result.rarityTotal}</strong></div>
+        <div class="fishing-outcome fishing-outcome-empty">No catch this attempt.</div>
+      </article>
+    `;
+  }
+
+  const entry = result.entry;
+  const saleText = extractSaleText(entry?.description || '');
+  const strengthBlock = result.strengthRequired
+    ? `<div class="fishing-roll-line"><strong>Strength check:</strong> d20 = ${result.strengthRoll}; ${fmtMod(result.strengthMod)} → <strong>${result.strengthTotal}</strong> vs PS ${entry.ps} ${result.strengthSuccess ? '<span class="fishing-pass">Success</span>' : '<span class="fishing-fail">Failed</span>'}</div>`
+    : `<div class="fishing-roll-line"><strong>Strength check:</strong> Not required (${entry?.ps || 0} PS vs STR ${result.strengthScore}).</div>`;
+
+  const outcomeText = result.strengthSuccess
+    ? `Caught ${escapeHtml(entry?.name || 'Unknown Catch')}`
+    : `${escapeHtml(entry?.name || 'The catch')} got away`;
+
+  return `
+    <article class="fishing-card fishing-card-${rarityClass}">
+      <div class="fishing-card-head">
+        <div class="fishing-card-title">Attempt ${result.attemptNumber}</div>
+        <span class="fishing-rarity-badge fishing-rarity-${rarityClass}">${escapeHtml(result.rarity)}</span>
+      </div>
+      <div class="fishing-roll-line"><strong>Gear:</strong> ${escapeHtml(result.gear.name)}</div>
+      <div class="fishing-roll-line"><strong>Survival:</strong> d20 ${result.hasAdvantage ? '(adv)' : ''} = ${survivalRollText}; ${fmtMod(result.survivalMod)} → <strong>${result.rarityTotal}</strong></div>
+      <div class="fishing-roll-line"><strong>Luck:</strong> d20 = ${result.luckRoll} → ${escapeHtml(entry?.name || 'Unknown Catch')}</div>
+      ${strengthBlock}
+      <div class="fishing-outcome ${result.strengthSuccess ? 'fishing-outcome-catch' : 'fishing-outcome-lost'}">${outcomeText}</div>
+      ${entry?.description ? `<div class="fishing-catch-desc">${escapeHtml(entry.description)}</div>` : ''}
+      ${saleText ? `<div class="fishing-catch-sale">${escapeHtml(saleText)}</div>` : ''}
+    </article>
+  `;
+}
+
+function runFishingSession(attemptCount) {
+  ensureFishingTableLoaded();
+  renderFishingGearOptions();
+  renderFishingSummary();
+
+  const gear = getSelectedFishingGear();
+  const resultsEl = document.getElementById('fishing-results');
+  if (!resultsEl) return;
+
+  if (!gear) {
+    resultsEl.innerHTML = '<div class="fishing-empty">No valid fishing gear found in Equipment. Add a pole, rod, net, or Fisherman\'s Tools first.</div>';
+    return;
+  }
+
+  const attempts = [];
+  for (let i = 1; i <= attemptCount; i++) {
+    attempts.push(resolveFishingAttempt(i, gear));
+  }
+
+  resultsEl.innerHTML = attempts.map(renderFishingAttemptCard).join('');
+}
+
+function fishHalfDay() {
+  runFishingSession(1);
+}
+
+function fishFullDay() {
+  runFishingSession(2);
+}
+
+function initFishingPanel() {
+  fishingPanelInitialized = true;
+  ensureFishingTableLoaded();
+  renderFishingGearOptions();
+  renderFishingSummary();
+
+  const bgEl = document.querySelector('[data-key="background"]');
+  bgEl?.addEventListener('input', () => {
+    renderFishingGearOptions();
+    renderFishingSummary();
+  });
+
+  const gearSelect = document.getElementById('fishing-gear-select');
+  gearSelect?.addEventListener('change', () => {
+    const resultsEl = document.getElementById('fishing-results');
+    if (resultsEl) {
+      resultsEl.innerHTML = '<div class="fishing-empty">Gear changed. Roll a new half-day or full-day fishing session.</div>';
+    }
+  });
+}
+
+window.fishHalfDay = fishHalfDay;
+window.fishFullDay = fishFullDay;
 
 /** Calculate total character level from all multiclass rows. */
 function calcTotalLevel() {
@@ -1939,6 +2305,8 @@ function renderEquipment() {
   // Re-apply active filter
   const activeTab = document.querySelector('.equip-tab.active');
   if (activeTab) filterEquip(activeTab, activeTab.dataset.cat);
+
+  if (fishingPanelInitialized) renderFishingGearOptions();
 }
 
 /** Build a single equipment list item element */
@@ -1979,6 +2347,7 @@ function buildEquipRow(item) {
       if (entry) {
         entry[field] = el.textContent.trim();
         saveSheet(true);
+        renderFishingGearOptions();
       }
     });
     // Prevent newlines
@@ -2061,6 +2430,8 @@ document.addEventListener('DOMContentLoaded', () => {
     syncEquipNewCountState();
   }
 });
+
+window.adjustEquipCount = adjustEquipCount;
 
 /** Delete an equipment item by id */
 function deleteEquipItem(id) {
