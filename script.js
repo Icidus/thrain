@@ -784,40 +784,44 @@ function btAttack(weapon) {
   if (!btState.actionUsed) btState.actionUsed = true;
   btState.attacksThisTurn++;
 
-  let hitBonus, damageDice, damageLabel, damageBonus, notes = [], weaponLabel;
+  let hitBonus, damageDice, damageLabel, damageBonus, notes = [], weaponLabel, flatBonusLabel;
 
   if (weapon === 'thrown') {
     weaponLabel = 'DT Thrown';
     hitBonus = s.mStr + s.prof + magic + ARCHERY_STYLE_BONUS;
     damageBonus = s.mStr + magic;
-    if (s.ss) { hitBonus -= 5; damageBonus += 10; notes.push('Sharpshooter −5/+10'); }
+    if (s.ss) { hitBonus -= 5; damageBonus += 10; notes.push('Sharpshooter −5 hit / +10 dmg'); }
     damageDice = s.vsG ? '3d8' : '2d8';
-    damageLabel = s.vsG ? '1d8+2d8' : '1d8+1d8';
+    damageLabel = s.vsG ? '1d8 + 2d8' : '1d8 + 1d8';
+    flatBonusLabel = s.ss ? `${fmtMod(s.mStr + magic)} weapon, +10 SS` : `${fmtMod(s.mStr + magic)} weapon`;
     notes.push(s.vsG ? '1d8 weapon + 2d8 vs Giant' : '1d8 weapon + 1d8 thrown');
     notes.push('bludg · returns');
   } else if (weapon === 'melee') {
     weaponLabel = 'DT Melee';
     hitBonus = s.mStr + s.prof + magic;
     damageBonus = s.mStr + magic;
-    if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5/+10'); }
+    if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5 hit / +10 dmg'); }
     damageDice = '1d8';
     damageLabel = damageDice;
+    flatBonusLabel = s.gwm ? `${fmtMod(s.mStr + magic)} weapon, +10 GWM` : `${fmtMod(s.mStr + magic)} weapon`;
     notes.push('bludg');
   } else if (weapon === 'halberd') {
     weaponLabel = 'Halberd';
     hitBonus = s.mStr + s.prof;
     damageBonus = s.mStr;
-    if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5/+10'); }
+    if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5 hit / +10 dmg'); }
     damageDice = '1d10';
     damageLabel = damageDice;
+    flatBonusLabel = s.gwm ? `${fmtMod(s.mStr)} STR, +10 GWM` : `${fmtMod(s.mStr)} STR`;
     notes.push('slash · reach 10ft');
   } else {
     weaponLabel = 'Battle Axe';
     hitBonus = s.mStr + s.prof;
     damageBonus = s.mStr;
-    if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5/+10'); }
+    if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5 hit / +10 dmg'); }
     damageDice = '1d8';
     damageLabel = damageDice;
+    flatBonusLabel = s.gwm ? `${fmtMod(s.mStr)} STR, +10 GWM` : `${fmtMod(s.mStr)} STR`;
     notes.push('slash');
   }
 
@@ -850,7 +854,11 @@ function btAttack(weapon) {
   const logIdx = btAddLog(`Atk${atkNum}: ${weaponLabel}…`, 'attack');
   btRender();
 
-  const dmgBreakdown = `[${dmg.rolls.join('+')}]${isCrit ? '×2' : ''}${gmRoll > 0 ? `+GM(${gmRoll})` : ''}${fmtMod(damageBonus)}`;
+  const rolledParts = [`[${dmg.rolls.join('+')}]${isCrit ? '×2' : ''}`];
+  if (gmRoll > 0) rolledParts.push(`[${gmRoll}]`);
+  const damageBonusText = damageBonus >= 0 ? `+${damageBonus}` : `${damageBonus}`;
+  const damageFormula = `${damageLabel}${gmRoll > 0 ? ' + 1d10' : ''}`;
+  const damageSummary = `${rolledParts.join(' + ')} ${damageBonusText} = <strong>${totalDmg}</strong>`;
 
   btShowResult(`
     <div class="bt-result-card">
@@ -862,12 +870,14 @@ function btAttack(weapon) {
         </div>
         <div class="bt-dice-arrow">&#10132;</div>
         <div class="bt-dice-block bt-dmg-block">
-          <div class="bt-dice-label">Damage &nbsp;${damageLabel}${gmRoll > 0 ? '+1d10' : ''}${isCrit ? ' (CRIT ×2)' : ''}</div>
-          <div class="bt-dice-value">${dmgBreakdown} = <strong>${totalDmg}</strong></div>
+          <div class="bt-dice-label">Damage${isCrit ? ' (CRIT ×2 dice)' : ''}</div>
+          <div class="bt-dice-value">Roll ${damageFormula}</div>
+          <div class="bt-result-notes bt-result-notes-plain">${damageSummary}</div>
         </div>
       </div>
+      <div class="bt-result-notes bt-result-notes-plain">Add ${damageBonusText} flat damage (${flatBonusLabel})</div>
       ${notes.length ? `<div class="bt-result-notes">${notes.join(' &middot; ')}</div>` : ''}
-      ${gmNote ? `<div class="bt-result-notes" style="color:#ffd700">${gmNote}</div>` : ''}
+      ${gmNote ? `<div class="bt-result-notes bt-result-notes-plain" style="color:#ffd700">${gmNote}</div>` : ''}
       <div class="bt-confirm-row">
         <button class="bt-confirm-btn bt-hit-btn" onclick="btConfirmHit(${logIdx},'hit',${totalHit},${totalDmg},'${weapon}',${atkNum})">✓ HIT</button>
         <button class="bt-confirm-btn bt-miss-btn" onclick="btConfirmHit(${logIdx},'miss',${totalHit},0,'${weapon}',${atkNum})">✗ MISS</button>

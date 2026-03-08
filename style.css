@@ -1276,6 +1276,7 @@ input[type="number"]:focus, input[type="text"]:focus { border-color: var(--gold-
 .bt-dice-bns { color: var(--rune-gold); }
 .bt-dice-arrow { font-size:1.3rem; color:rgba(255,255,255,0.3); align-self:center; }
 .bt-result-notes { font-size:0.7rem; color:rgba(255,255,255,0.5); font-style:italic; margin-top:0.25rem; }
+.bt-result-notes-plain { font-style: normal; }
 .bt-result-hint { font-size:0.72rem; color:#80c0ff; margin-top:0.3rem; }
 .bt-hint-done { color: var(--rune-gold) !important; font-weight:700; }
 .bt-result-list { padding-left:1.2rem; margin:0.25rem 0; }
