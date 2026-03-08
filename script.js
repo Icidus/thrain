@@ -152,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Fallbacks if loadSheet found no saved data
   if (equipmentItems.length === 0) {
-    equipmentItems = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
+    equipmentItems = DEFAULT_EQUIPMENT.map(e => normalizeEquipmentItem(e));
     renderEquipment();
   }
   if (languageItems.length === 0) {
@@ -1502,9 +1502,9 @@ function applySheetData(data) {
 
   // Equipment
   if (Array.isArray(data['_equipment']) && data['_equipment'].length > 0) {
-    equipmentItems = data['_equipment'];
+      equipmentItems = data['_equipment'].map(normalizeEquipmentItem);
   } else {
-    equipmentItems = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
+      equipmentItems = DEFAULT_EQUIPMENT.map(e => normalizeEquipmentItem(e));
   }
   renderEquipment();
 
@@ -1561,14 +1561,14 @@ function loadSheet() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       // No local data — render default equipment at minimum
-      equipmentItems = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
+      equipmentItems = DEFAULT_EQUIPMENT.map(e => normalizeEquipmentItem(e));
       renderEquipment();
       return;
     }
     applySheetData(JSON.parse(raw));
   } catch (e) {
     console.error('Load failed:', e);
-    equipmentItems = DEFAULT_EQUIPMENT.map(e => ({ ...e }));
+    equipmentItems = DEFAULT_EQUIPMENT.map(e => normalizeEquipmentItem(e));
     renderEquipment();
   }
 }
@@ -1889,11 +1889,50 @@ function equipId() {
   return 'eq_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
 }
 
+function normalizeEquipmentItem(item) {
+  const normalized = { ...item };
+  if (normalized.cat === 'consumable') {
+    const count = parseInt(normalized.count, 10);
+    normalized.count = Number.isFinite(count) ? Math.max(0, count) : 1;
+  } else {
+    delete normalized.count;
+  }
+  return normalized;
+}
+
+function syncEquipNewCountState() {
+  const catEl = document.getElementById('equip-new-cat');
+  const countEl = document.getElementById('equip-new-count');
+  if (!catEl || !countEl) return;
+  const isConsumable = catEl.value === 'consumable';
+  countEl.disabled = !isConsumable;
+  countEl.classList.toggle('equip-new-count-disabled', !isConsumable);
+}
+
+function adjustEquipCount(id, delta) {
+  const entry = equipmentItems.find(i => i.id === id);
+  if (!entry || entry.cat !== 'consumable') return;
+  const current = parseInt(entry.count, 10);
+  const nextCount = Math.max(0, (Number.isFinite(current) ? current : 0) + delta);
+  entry.count = nextCount;
+
+  const row = document.querySelector(`.equip-item[data-id="${id}"]`);
+  if (row) {
+    const countInput = row.querySelector('.equip-count-input');
+    const countBadge = row.querySelector('.equip-count-badge');
+    if (countInput) countInput.value = nextCount;
+    if (countBadge) countBadge.textContent = `×${nextCount}`;
+  }
+
+  saveSheet(true);
+}
+
 /** Render all equipment items into the list */
 function renderEquipment() {
   const list = document.getElementById('equip-list');
   if (!list) return;
   list.innerHTML = '';
+  equipmentItems = equipmentItems.map(normalizeEquipmentItem);
   equipmentItems.forEach(item => {
     list.appendChild(buildEquipRow(item));
   });
@@ -1904,18 +1943,30 @@ function renderEquipment() {
 
 /** Build a single equipment list item element */
 function buildEquipRow(item) {
+  item = normalizeEquipmentItem(item);
   const li = document.createElement('li');
   li.className = 'equip-item';
   li.dataset.id = item.id;
   li.dataset.cat = item.cat;
 
   const catLabels = { armor: 'Armor', weapon: 'Weapon', magic: 'Magic', tool: 'Tool', consumable: 'Consumable', misc: 'Misc' };
+  const consumableControls = item.cat === 'consumable'
+    ? `<div class="equip-item-controls no-print">
+         <button class="equip-count-btn" type="button" title="Use one" onclick="adjustEquipCount('${item.id}', -1)">−</button>
+         <label class="equip-count-label">Qty
+           <input type="number" class="equip-count-input" min="0" step="1" value="${item.count}" data-item-id="${item.id}" aria-label="${escapeHtml(item.name)} quantity" />
+         </label>
+         <button class="equip-count-btn" type="button" title="Gain one" onclick="adjustEquipCount('${item.id}', 1)">+</button>
+       </div>
+       <span class="equip-count-badge">×${item.count}</span>`
+    : '';
 
   li.innerHTML = `
     <span class="equip-cat-badge">${catLabels[item.cat] || item.cat}</span>
     <div class="equip-item-body">
       <span class="equip-item-name" contenteditable="true" data-item-id="${item.id}" data-field="name">${escapeHtml(item.name)}</span><span class="equip-item-sep"> — </span><span class="equip-item-desc" contenteditable="true" data-item-id="${item.id}" data-field="desc">${escapeHtml(item.desc || '')}</span>
     </div>
+    ${consumableControls}
     <button class="equip-delete no-print" title="Remove item" onclick="deleteEquipItem('${item.id}')">✕</button>
   `;
 
@@ -1934,6 +1985,23 @@ function buildEquipRow(item) {
     el.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } });
   });
 
+  const countInput = li.querySelector('.equip-count-input');
+  if (countInput) {
+    const countBadge = li.querySelector('.equip-count-badge');
+    const syncCount = () => {
+      const entry = equipmentItems.find(i => i.id === countInput.dataset.itemId);
+      if (!entry) return;
+      const parsed = parseInt(countInput.value, 10);
+      const nextCount = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+      countInput.value = nextCount;
+      entry.count = nextCount;
+      if (countBadge) countBadge.textContent = `×${nextCount}`;
+      saveSheet(true);
+    };
+    countInput.addEventListener('input', syncCount);
+    countInput.addEventListener('change', syncCount);
+  }
+
   return li;
 }
 
@@ -1942,6 +2010,7 @@ function addEquipItem() {
   const catEl   = document.getElementById('equip-new-cat');
   const nameEl  = document.getElementById('equip-new-name');
   const descEl  = document.getElementById('equip-new-desc');
+  const countEl = document.getElementById('equip-new-count');
 
   const name = nameEl?.value.trim();
   if (!name) {
@@ -1957,11 +2026,16 @@ function addEquipItem() {
     name: name,
     desc: descEl?.value.trim() || '',
   };
+  if (newItem.cat === 'consumable') {
+    const parsedCount = parseInt(countEl?.value, 10);
+    newItem.count = Number.isFinite(parsedCount) ? Math.max(0, parsedCount) : 1;
+  }
 
-  equipmentItems.push(newItem);
+  const normalizedItem = normalizeEquipmentItem(newItem);
+  equipmentItems.push(normalizedItem);
 
   const list = document.getElementById('equip-list');
-  if (list) list.appendChild(buildEquipRow(newItem));
+  if (list) list.appendChild(buildEquipRow(normalizedItem));
 
   // Re-apply filter so new item respects active tab
   const activeTab = document.querySelector('.equip-tab.active');
@@ -1970,6 +2044,8 @@ function addEquipItem() {
   // Clear inputs
   if (nameEl) nameEl.value = '';
   if (descEl) descEl.value = '';
+  if (countEl) countEl.value = '1';
+  syncEquipNewCountState();
   nameEl?.focus();
 
   saveSheet(true);
@@ -1979,6 +2055,11 @@ function addEquipItem() {
 document.addEventListener('DOMContentLoaded', () => {
   const nameEl = document.getElementById('equip-new-name');
   if (nameEl) nameEl.addEventListener('keydown', e => { if (e.key === 'Enter') addEquipItem(); });
+  const catEl = document.getElementById('equip-new-cat');
+  if (catEl) {
+    catEl.addEventListener('change', syncEquipNewCountState);
+    syncEquipNewCountState();
+  }
 });
 
 /** Delete an equipment item by id */
