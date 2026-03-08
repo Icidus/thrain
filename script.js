@@ -48,6 +48,34 @@ const PROF_SKILLS_MAP = {
   arcana:     'int',  // double prof
 };
 
+const SKILL_KEYS = [
+  'athletics', 'acrobatics', 'sleight', 'stealth',
+  'arcana', 'history', 'investigation', 'nature', 'religion',
+  'animal', 'insight', 'medicine', 'perception', 'survival',
+  'deception', 'intimidation', 'performance', 'persuasion',
+];
+
+const DEFAULT_SKILL_BONUSES = {
+  athletics: 0,
+  acrobatics: 0,
+  sleight: 0,
+  stealth: 0,
+  arcana: 0,
+  history: 0,
+  investigation: 0,
+  nature: 0,
+  religion: 0,
+  animal: 0,
+  insight: 0,
+  medicine: 0,
+  perception: 1,
+  survival: 0,
+  deception: 0,
+  intimidation: 0,
+  performance: 0,
+  persuasion: 0,
+};
+
 // Multiclass counter for dynamic rows
 let mcRowCount = 1;
 
@@ -177,6 +205,19 @@ function getNum(key, fallback) {
   return isNaN(v) ? (fallback !== undefined ? fallback : 0) : v;
 }
 
+function getSkillBonus(skillKey) {
+  const el = document.querySelector(`.skill-bonus-input[data-skill="${skillKey}"]`);
+  const fallback = DEFAULT_SKILL_BONUSES[skillKey] ?? 0;
+  if (!el) return fallback;
+  const v = parseInt(el.value, 10);
+  return isNaN(v) ? fallback : v;
+}
+
+function getGiantsMightSize(totalLevel = calcTotalLevel()) {
+  const sizeSelect = document.getElementById('bt-rune-size');
+  return totalLevel >= 18 && sizeSelect?.value === 'huge' ? 'Huge' : 'Large';
+}
+
 /** Main recalculation — runs on any stat change. */
 function recalcAll() {
   const beltActive = document.getElementById('belt-active')?.checked ?? false;
@@ -232,28 +273,47 @@ function recalcAll() {
 
   // Skills
   const dpProf = prof * 2;
-  setText('sk-athletics',   fmtMod(mStr + prof));   // proficient
-  setText('sk-acrobatics',  fmtMod(mDex));
-  setText('sk-sleight',     fmtMod(mDex + dpProf)); // double prof
-  setText('sk-stealth',     fmtMod(mDex));
-  setText('sk-arcana',      fmtMod(mInt + dpProf)); // double prof
-  setText('sk-history',     fmtMod(mInt));
-  setText('sk-investigation',fmtMod(mInt));
-  setText('sk-nature',      fmtMod(mInt));
-  setText('sk-religion',    fmtMod(mInt));
-  setText('sk-animal',      fmtMod(mWis));
-  setText('sk-insight',     fmtMod(mWis + dpProf)); // double prof
-  setText('sk-medicine',    fmtMod(mWis));
-  setText('sk-perception',  fmtMod(mWis + prof));   // proficient
-  setText('sk-survival',    fmtMod(mWis + prof));   // proficient
-  setText('sk-deception',   fmtMod(mCha + dpProf)); // double prof
-  setText('sk-intimidation',fmtMod(mCha));
-  setText('sk-performance', fmtMod(mCha));
-  setText('sk-persuasion',  fmtMod(mCha));
+  const athleticsBonus = getSkillBonus('athletics');
+  const acrobaticsBonus = getSkillBonus('acrobatics');
+  const sleightBonus = getSkillBonus('sleight');
+  const stealthBonus = getSkillBonus('stealth');
+  const arcanaBonus = getSkillBonus('arcana');
+  const historyBonus = getSkillBonus('history');
+  const investigationBonus = getSkillBonus('investigation');
+  const natureBonus = getSkillBonus('nature');
+  const religionBonus = getSkillBonus('religion');
+  const animalBonus = getSkillBonus('animal');
+  const insightBonus = getSkillBonus('insight');
+  const medicineBonus = getSkillBonus('medicine');
+  const perceptionBonus = getSkillBonus('perception');
+  const survivalBonus = getSkillBonus('survival');
+  const deceptionBonus = getSkillBonus('deception');
+  const intimidationBonus = getSkillBonus('intimidation');
+  const performanceBonus = getSkillBonus('performance');
+  const persuasionBonus = getSkillBonus('persuasion');
+
+  setText('sk-athletics',   fmtMod(mStr + prof + athleticsBonus));
+  setText('sk-acrobatics',  fmtMod(mDex + acrobaticsBonus));
+  setText('sk-sleight',     fmtMod(mDex + dpProf + sleightBonus));
+  setText('sk-stealth',     fmtMod(mDex + stealthBonus));
+  setText('sk-arcana',      fmtMod(mInt + dpProf + arcanaBonus));
+  setText('sk-history',     fmtMod(mInt + historyBonus));
+  setText('sk-investigation',fmtMod(mInt + investigationBonus));
+  setText('sk-nature',      fmtMod(mInt + natureBonus));
+  setText('sk-religion',    fmtMod(mInt + religionBonus));
+  setText('sk-animal',      fmtMod(mWis + animalBonus));
+  setText('sk-insight',     fmtMod(mWis + dpProf + insightBonus));
+  setText('sk-medicine',    fmtMod(mWis + medicineBonus));
+  setText('sk-perception',  fmtMod(mWis + prof + perceptionBonus));
+  setText('sk-survival',    fmtMod(mWis + prof + survivalBonus));
+  setText('sk-deception',   fmtMod(mCha + dpProf + deceptionBonus));
+  setText('sk-intimidation',fmtMod(mCha + intimidationBonus));
+  setText('sk-performance', fmtMod(mCha + performanceBonus));
+  setText('sk-persuasion',  fmtMod(mCha + persuasionBonus));
 
   // Passive scores (10 + modifier)
-  const passivePerc = 10 + mWis + prof;
-  const passiveInsight = 10 + mWis + dpProf;
+  const passivePerc = 10 + mWis + prof + perceptionBonus;
+  const passiveInsight = 10 + mWis + dpProf + insightBonus;
   setText('passive-perception', passivePerc);
   setText('passive-insight', passiveInsight);
   setText('senses-perception', passivePerc);
@@ -684,7 +744,8 @@ function btGetStats() {
   const totalLevel = calcTotalLevel();
   const prof = profBonusForLevel(totalLevel);
   const runeDC = 8 + prof + mCon;
-  return { mStr, mDex, mWis, mCon, totalLevel, prof, runeDC, gmA, vsG, gwm, ss };
+  const gmSize = getGiantsMightSize(totalLevel);
+  return { mStr, mDex, mWis, mCon, totalLevel, prof, runeDC, gmA, gmSize, vsG, gwm, ss };
 }
 
 /** Roll N dice of given sides, returns {rolls, total} */
@@ -723,7 +784,7 @@ function btAttack(weapon) {
   if (!btState.actionUsed) btState.actionUsed = true;
   btState.attacksThisTurn++;
 
-  let hitBonus, damageDice, damageBonus, notes = [], weaponLabel;
+  let hitBonus, damageDice, damageLabel, damageBonus, notes = [], weaponLabel;
 
   if (weapon === 'thrown') {
     weaponLabel = 'DT Thrown';
@@ -731,7 +792,8 @@ function btAttack(weapon) {
     damageBonus = s.mStr + magic;
     if (s.ss) { hitBonus -= 5; damageBonus += 10; notes.push('Sharpshooter −5/+10'); }
     damageDice = s.vsG ? '3d8' : '2d8';
-    if (s.vsG) notes.push('vs Giant +1d8');
+    damageLabel = s.vsG ? '1d8+2d8' : '1d8+1d8';
+    notes.push(s.vsG ? '1d8 weapon + 2d8 vs Giant' : '1d8 weapon + 1d8 thrown');
     notes.push('bludg · returns');
   } else if (weapon === 'melee') {
     weaponLabel = 'DT Melee';
@@ -739,6 +801,7 @@ function btAttack(weapon) {
     damageBonus = s.mStr + magic;
     if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5/+10'); }
     damageDice = '1d8';
+    damageLabel = damageDice;
     notes.push('bludg');
   } else if (weapon === 'halberd') {
     weaponLabel = 'Halberd';
@@ -746,6 +809,7 @@ function btAttack(weapon) {
     damageBonus = s.mStr;
     if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5/+10'); }
     damageDice = '1d10';
+    damageLabel = damageDice;
     notes.push('slash · reach 10ft');
   } else {
     weaponLabel = 'Battle Axe';
@@ -753,6 +817,7 @@ function btAttack(weapon) {
     damageBonus = s.mStr;
     if (s.gwm) { hitBonus -= 5; damageBonus += 10; notes.push('GWM −5/+10'); }
     damageDice = '1d8';
+    damageLabel = damageDice;
     notes.push('slash');
   }
 
@@ -797,7 +862,7 @@ function btAttack(weapon) {
         </div>
         <div class="bt-dice-arrow">&#10132;</div>
         <div class="bt-dice-block bt-dmg-block">
-          <div class="bt-dice-label">Damage &nbsp;${damageDice}${gmRoll > 0 ? '+1d10' : ''}${isCrit ? ' (CRIT ×2)' : ''}</div>
+          <div class="bt-dice-label">Damage &nbsp;${damageLabel}${gmRoll > 0 ? '+1d10' : ''}${isCrit ? ' (CRIT ×2)' : ''}</div>
           <div class="bt-dice-value">${dmgBreakdown} = <strong>${totalDmg}</strong></div>
         </div>
       </div>
@@ -886,12 +951,13 @@ function btUse(ability) {
     case 'giants_might': {
       const uses = getNum('giants_might_remaining', 0);
       if (uses <= 0) { btShowResult('<div class="bt-result-warn">⚠ No Giant\'s Might uses remaining.</div>'); return; }
+      const gmSize = getGiantsMightSize();
       document.getElementById('bt-gm-active').checked = true;
-      btAddLog("Giant's Might (BA)", 'bonus');
+      btAddLog(`Giant's Might (BA · ${gmSize})`, 'bonus');
       html = `<div class="bt-result-card bt-card-bonus">
         <div class="bt-result-head">&#9889; Giant's Might (Bonus Action)</div>
         <ul class="bt-result-list">
-          <li>Size becomes <strong>Large</strong> (if space allows)</li>
+          <li>Size becomes <strong>${gmSize}</strong> (if space allows)</li>
           <li><strong>Advantage</strong> on STR checks &amp; saves</li>
           <li>Add <strong>1d10</strong> to first attack damage this turn</li>
           <li>Reach increases +5 ft · Duration: 1 minute</li>
@@ -1325,6 +1391,11 @@ function collectData() {
   // Journal entries
   data['_journal_entries'] = journalEntries;
 
+  data['_skill_bonuses'] = SKILL_KEYS.reduce((acc, skillKey) => {
+    acc[skillKey] = getSkillBonus(skillKey);
+    return acc;
+  }, {});
+
   return data;
 }
 
@@ -1456,6 +1527,15 @@ function applySheetData(data) {
     journalEntries = data['_journal_entries'];
     renderJournalEntries();
   }
+
+  // Manual skill bonuses
+  const savedSkillBonuses = data['_skill_bonuses'] || {};
+  document.querySelectorAll('.skill-bonus-input').forEach(el => {
+    const skillKey = el.dataset.skill;
+    const fallback = DEFAULT_SKILL_BONUSES[skillKey] ?? 0;
+    const value = savedSkillBonuses[skillKey];
+    el.value = value !== undefined ? value : fallback;
+  });
 
   // Recalculate all derived stats after applying new data
   recalcAll();

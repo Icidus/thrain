@@ -148,7 +148,13 @@
       <div class="bt-options-bar">
         <span class="bt-options-label">Modifiers:</span>
         <label class="bt-opt"><input type="checkbox" id="bt-gm-active"> Giant&apos;s Might active</label>
-        <label class="bt-opt"><input type="checkbox" id="bt-vs-giant"> Target is Giant</label>
+        <label class="bt-opt bt-opt-select">Rune size
+          <select id="bt-rune-size" class="bt-size-select" aria-label="Giant's Might size">
+            <option value="large">Large</option>
+            <option value="huge" selected>Huge</option>
+          </select>
+        </label>
+        <label class="bt-opt" title="Used for Dwarven Thrower thrown damage"><input type="checkbox" id="bt-vs-giant"> Dwarven Thrower target is Giant</label>
         <label class="bt-opt"><input type="checkbox" id="bt-gwm"> GWM (&minus;5/+10)</label>
         <label class="bt-opt"><input type="checkbox" id="bt-ss"> Sharpshooter (&minus;5/+10)</label>
         <label class="bt-opt"><input type="checkbox" id="bt-belt-bt"> Belt of Giant Str</label>
@@ -287,32 +293,32 @@
           <h2 class="section-title">Skills</h2>
           <ul class="save-skill-list skills-list">
             <li class="skill-group-header">Strength</li>
-            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-athletics">+10</span> Athletics</li>
+            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-athletics">+10</span> Athletics <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="athletics" value="0" step="1" oninput="recalcAll()" aria-label="Athletics manual adjustment"></label></li>
 
             <li class="skill-group-header">Dexterity</li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-acrobatics">+0</span> Acrobatics</li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-sleight">+0</span> Sleight of Hand <span class="expertise-badge">×2</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-stealth">+0</span> Stealth</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-acrobatics">+0</span> Acrobatics <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="acrobatics" value="0" step="1" oninput="recalcAll()" aria-label="Acrobatics manual adjustment"></label></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-sleight">+0</span> Sleight of Hand <span class="expertise-badge">×2</span> <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="sleight" value="0" step="1" oninput="recalcAll()" aria-label="Sleight of Hand manual adjustment"></label></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-stealth">+0</span> Stealth <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="stealth" value="0" step="1" oninput="recalcAll()" aria-label="Stealth manual adjustment"></label></li>
 
             <li class="skill-group-header">Intelligence</li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-arcana">-1</span> Arcana <span class="expertise-badge">×2</span> <span class="adv-badge">ADV</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-history">-1</span> History</li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-investigation">-1</span> Investigation</li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-nature">-1</span> Nature</li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-religion">-1</span> Religion</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-arcana">-1</span> Arcana <span class="expertise-badge">×2</span> <span class="adv-badge">ADV</span> <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="arcana" value="0" step="1" oninput="recalcAll()" aria-label="Arcana manual adjustment"></label></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-history">-1</span> History <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="history" value="0" step="1" oninput="recalcAll()" aria-label="History manual adjustment"></label></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-investigation">-1</span> Investigation <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="investigation" value="0" step="1" oninput="recalcAll()" aria-label="Investigation manual adjustment"></label></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-nature">-1</span> Nature <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="nature" value="0" step="1" oninput="recalcAll()" aria-label="Nature manual adjustment"></label></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-religion">-1</span> Religion <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="religion" value="0" step="1" oninput="recalcAll()" aria-label="Religion manual adjustment"></label></li>
 
             <li class="skill-group-header">Wisdom</li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-animal">+2</span> Animal Handling</li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-insight">+2</span> Insight <span class="expertise-badge">×2</span> <span class="adv-badge">ADV</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-medicine">+2</span> Medicine</li>
-            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-perception">+8</span> Perception <span class="disadv-badge">DISADV*</span></li>
-            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-survival">+8</span> Survival</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-animal">+2</span> Animal Handling <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="animal" value="0" step="1" oninput="recalcAll()" aria-label="Animal Handling manual adjustment"></label></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-insight">+2</span> Insight <span class="expertise-badge">×2</span> <span class="adv-badge">ADV</span> <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="insight" value="0" step="1" oninput="recalcAll()" aria-label="Insight manual adjustment"></label></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-medicine">+2</span> Medicine <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="medicine" value="0" step="1" oninput="recalcAll()" aria-label="Medicine manual adjustment"></label></li>
+            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-perception">+8</span> Perception <span class="disadv-badge">DISADV*</span> <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="perception" value="1" step="1" oninput="recalcAll()" aria-label="Perception manual adjustment"></label></li>
+            <li class="proficient"><span class="prof-dot filled">●</span> <span class="stat-val" id="sk-survival">+8</span> Survival <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="survival" value="0" step="1" oninput="recalcAll()" aria-label="Survival manual adjustment"></label></li>
 
             <li class="skill-group-header">Charisma</li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-deception">+1</span> Deception <span class="expertise-badge">×2</span></li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-intimidation">+1</span> Intimidation</li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-performance">+1</span> Performance</li>
-            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-persuasion">+1</span> Persuasion</li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-deception">+1</span> Deception <span class="expertise-badge">×2</span> <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="deception" value="0" step="1" oninput="recalcAll()" aria-label="Deception manual adjustment"></label></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-intimidation">+1</span> Intimidation <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="intimidation" value="0" step="1" oninput="recalcAll()" aria-label="Intimidation manual adjustment"></label></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-performance">+1</span> Performance <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="performance" value="0" step="1" oninput="recalcAll()" aria-label="Performance manual adjustment"></label></li>
+            <li><span class="prof-dot">○</span> <span class="stat-val" id="sk-persuasion">+1</span> Persuasion <label class="skill-bonus-control no-print" title="Manual bonus or penalty">Adj <input type="number" class="skill-bonus-input" data-skill="persuasion" value="0" step="1" oninput="recalcAll()" aria-label="Persuasion manual adjustment"></label></li>
           </ul>
           <p class="footnote">* Perception: Disadvantage — missing eye</p>
           <div class="passive-block">
@@ -754,7 +760,7 @@
           <h3 class="sub-section-title">⚡ Giant's Might</h3>
           <p><strong>Activation:</strong> Bonus action. Duration: 1 minute.</p>
           <ul class="feature-list">
-            <li>Your size becomes <strong>Large</strong> (if space allows).</li>
+            <li>Your size becomes <strong>Large</strong> or <strong>Huge</strong> (Rune Juggernaut, if space allows).</li>
             <li><strong>Advantage</strong> on Strength checks and Strength saving throws.</li>
             <li>Add <strong>1d10</strong> to ONE weapon attack damage per turn.</li>
             <li>Your reach increases by <strong>5 ft</strong>.</li>

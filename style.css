@@ -409,6 +409,7 @@ body {
   font-size: 0.78rem;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
   color: var(--ink-soft);
 }
@@ -419,6 +420,36 @@ body {
 .prof-dot.filled { color: var(--red-accent); }
 
 .stat-val { font-weight: 700; min-width: 28px; text-align: right; margin-right: 2px; }
+
+.skill-bonus-control {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--iron-light);
+}
+
+.skill-bonus-input {
+  width: 3.1rem;
+  padding: 0.08rem 0.2rem;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: rgba(255,255,255,0.92);
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-family: var(--font-ui);
+  text-align: center;
+}
+
+.skill-bonus-input:focus {
+  outline: none;
+  border-color: var(--gold-dark);
+  box-shadow: 0 0 0 2px rgba(201,168,76,0.18);
+}
 
 .skill-ability { color: var(--iron-light); font-size: 0.68rem; margin-left: 2px; }
 
@@ -1157,6 +1188,21 @@ input[type="number"]:focus, input[type="text"]:focus { border-color: var(--gold-
 .bt-options-label { font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:rgba(255,255,255,0.4); }
 .bt-opt { display:flex; align-items:center; gap:0.35rem; font-size:0.8rem; color:#c8b89a; cursor:pointer; user-select:none; }
 .bt-opt input { accent-color: var(--rune-gold); width:14px; height:14px; }
+.bt-opt-select { cursor: default; }
+.bt-size-select {
+  border: 1px solid rgba(201,168,76,0.35);
+  border-radius: 4px;
+  background: rgba(15,20,25,0.9);
+  color: #f0e8d0;
+  padding: 0.18rem 0.35rem;
+  font-size: 0.78rem;
+  font-family: var(--font-ui);
+}
+.bt-size-select:focus {
+  outline: none;
+  border-color: var(--rune-gold);
+  box-shadow: 0 0 0 2px rgba(201,168,76,0.18);
+}
 .bt-columns {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1.4fr;
