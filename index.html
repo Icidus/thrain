@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Thrain Ironhammerson — Character Sheet</title>
-  <link rel="stylesheet" href="style.css?v=20260601c" />
+  <link rel="stylesheet" href="style.css?v=20260602d" />
   <!-- Firebase SDK (compat — no bundler needed) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -12,9 +12,10 @@
   <script src="firebase.js?v=20260308a"></script>
   <script src="fishing-data.js?v=20260308b"></script>
   <script src="class-features.js?v=20260529b"></script>
-  <script src="homebrew-content.js?v=20260602b"></script>
+  <script src="class-spells.js?v=20260602a"></script>
+  <script src="homebrew-content.js?v=20260602c"></script>
   <!-- Sheet logic -->
-  <script src="script.js?v=20260601a" defer></script>
+  <script src="script.js?v=20260602b" defer></script>
   <script src="dice-roller.js?v=20260601b" defer></script>
 </head>
 <body>
@@ -568,26 +569,12 @@
           <h2 class="section-title">Multiclass Breakdown</h2>
           <div id="multiclass-rows">
             <div class="mc-row">
-              <input class="mc-class-name" type="text" placeholder="Class name" list="class-name-options" value="Fighter (Rune Knight)" data-mc-key="mc_class_0" oninput="recalcAll(); saveSheet(true);" />
+              <input class="mc-class-name" type="hidden" value="Fighter (Rune Knight)" data-mc-key="mc_class_0" />
+              <div class="mc-selectors"></div>
               <input class="mc-level-num" type="number" value="20" min="0" max="40" data-mc-key="mc_level_0" oninput="recalcAll(); saveSheet(true);" />
-              <span class="mc-label">levels</span>
-              <button class="mc-remove no-print" onclick="removeMCRow(this)">✕</button>
+              <span class="mc-label">lvl</span>
             </div>
           </div>
-          <datalist id="class-name-options">
-            <option value="Barbarian"></option>
-            <option value="Bard"></option>
-            <option value="Cleric"></option>
-            <option value="Druid"></option>
-            <option value="Fighter"></option>
-            <option value="Monk"></option>
-            <option value="Paladin"></option>
-            <option value="Ranger"></option>
-            <option value="Rogue"></option>
-            <option value="Sorcerer"></option>
-            <option value="Warlock"></option>
-            <option value="Wizard"></option>
-          </datalist>
           <button class="btn-small no-print" onclick="addMCRow()">+ Add Multiclass</button>
           <div class="mc-total-row">
             Total Character Level: <strong id="mc-total">20</strong> &nbsp;|&nbsp; Prof Bonus: <strong id="mc-prof">+6</strong>
@@ -815,6 +802,21 @@
           Add a class in the <strong>Multiclass Breakdown</strong> above (e.g. Barbarian, level 3)
           and its features appear here automatically.
         </div>
+      </section>
+
+      <!-- SPELLS (auto, when a caster class is present) -->
+      <section class="section spells-section" id="spells-section" style="display:none">
+        <div class="spells-header">
+          <h2 class="section-title">✨ Spells</h2>
+          <button class="btn-small no-print" onclick="toggleSpellBrowser()">✨ Browse spells</button>
+        </div>
+        <div id="spellcasting-stats" class="spellcasting-stats"></div>
+        <div id="spell-slots" class="spell-slots"></div>
+        <div id="spell-browser" class="spell-browser no-print" style="display:none">
+          <input type="text" id="spell-search" class="spell-search-input" placeholder="Search spells by name or school…" oninput="renderSpellBrowser()" />
+          <div id="spell-browser-list" class="spell-browser-list"></div>
+        </div>
+        <div id="spell-list" class="spell-list"></div>
       </section>
 
       <!-- RACIAL TRAITS -->

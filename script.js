@@ -151,6 +151,7 @@ let dismissedClassFeatures = []; // ids of auto class features the user has hidd
 
 document.addEventListener('DOMContentLoaded', () => {
   loadSheet(); // also calls renderEquipment + renderLanguages + renderTools + renderFeats internally
+  initMulticlassUI(); // build class/subclass dropdowns for any existing rows
   recalcAll();
   updateXP();
   setFooterDate();
@@ -373,6 +374,9 @@ function recalcAll() {
 
   // Auto-populate class features from the multiclass rows
   syncMulticlassFeatures();
+
+  // Spellcasting section (DC/attack/slots depend on stats + caster level)
+  renderSpells();
 
   renderFishingSummary();
 }
@@ -1828,20 +1832,140 @@ function deleteJournalEntry(id) {
 // MULTICLASS ROWS
 // ─────────────────────────────────────────────────────────────
 
+// ── Multiclass row dropdowns ────────────────────────────────────────────
+const MC_CLASSES = ['Barbarian','Bard','Cleric','Druid','Fighter','Monk','Paladin','Ranger','Rogue','Sorcerer','Warlock','Wizard'];
+const MC_CLASS_KEYS = MC_CLASSES.map(c => c.toLowerCase());
+// Subclasses we have feature data for (SRD + homebrew), by class. Display names
+// slugify back to the right key via the forgiving match in resolveSubclassFeatures.
+const SUBCLASS_BY_CLASS = {
+  barbarian: ['Path of the Berserker'],
+  bard: ['College of Lore'],
+  cleric: ['Life Domain', 'Twilight Domain'],
+  druid: ['Circle of the Land'],
+  fighter: ['Champion', 'Rune Knight'],
+  monk: ['Way of the Open Hand'],
+  paladin: ['Oath of Devotion'],
+  ranger: ['Hunter'],
+  rogue: ['Thief'],
+  sorcerer: ['Draconic Bloodline'],
+  warlock: ['The Fiend'],
+  wizard: ['School of Evocation', 'War Magic'],
+};
+
+/** Inner HTML for a multiclass row (hidden combined value + selector slot). */
+function mcRowHTML(idx, name, level, removable) {
+  return `
+    <input class="mc-class-name" type="hidden" value="${escapeHtml(name || '')}" data-mc-key="mc_class_${idx}" />
+    <div class="mc-selectors"></div>
+    <input class="mc-level-num" type="number" value="${level == null ? 1 : level}" min="0" max="40" data-mc-key="mc_level_${idx}" oninput="recalcAll(); saveSheet(true);" />
+    <span class="mc-label">lvl</span>
+    ${removable ? `<button class="mc-remove no-print" onclick="removeMCRow(this)">✕</button>` : ''}
+  `;
+}
+
+/** Split "Class (Subclass)" into parts. */
+function mcParse(raw) {
+  const m = String(raw || '').match(/^\s*([^(]*?)\s*(?:\(([^)]*)\))?\s*$/);
+  return { className: m ? m[1].trim() : '', subName: (m && m[2]) ? m[2].trim() : '' };
+}
+
+/** Build the class + subclass dropdowns (and a Custom… escape hatch) for a row. */
+function mcBuildSelectors(rowEl) {
+  const hidden = rowEl.querySelector('.mc-class-name');
+  const holder = rowEl.querySelector('.mc-selectors');
+  if (!hidden || !holder) return;
+  holder.innerHTML = '';
+
+  const { className, subName } = mcParse(hidden.value);
+  const classKey = className.toLowerCase();
+  const known = MC_CLASS_KEYS.includes(classKey);
+
+  const classSel = document.createElement('select');
+  classSel.className = 'mc-class-select';
+  classSel.innerHTML = '<option value="">— class —</option>'
+    + MC_CLASSES.map(c => `<option value="${c.toLowerCase()}">${c}</option>`).join('')
+    + '<option value="__custom__">Custom…</option>';
+
+  const subSel = document.createElement('select');
+  subSel.className = 'mc-subclass-select';
+
+  const customInput = document.createElement('input');
+  customInput.type = 'text';
+  customInput.className = 'mc-custom-input';
+  customInput.placeholder = 'Custom, e.g. Artificer (Armorer)';
+
+  holder.append(classSel, subSel, customInput);
+
+  const fillSub = () => {
+    const list = SUBCLASS_BY_CLASS[classSel.value] || [];
+    subSel.innerHTML = '<option value="">— subclass —</option>'
+      + list.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  };
+  const setCustom = (on) => { customInput.style.display = on ? '' : 'none'; subSel.style.display = on ? 'none' : ''; };
+
+  classSel.addEventListener('change', () => {
+    if (classSel.value === '__custom__') { setCustom(true); }
+    else { setCustom(false); fillSub(); }
+    mcUpdateHidden(rowEl);
+  });
+  subSel.addEventListener('change', () => mcUpdateHidden(rowEl));
+  customInput.addEventListener('input', () => mcUpdateHidden(rowEl));
+
+  // Initialize from the saved combined value
+  if (known) {
+    classSel.value = classKey;
+    fillSub();
+    if (subName) {
+      if (![...subSel.options].some(o => o.value === subName)) {
+        const opt = document.createElement('option');
+        opt.value = subName; opt.textContent = subName; subSel.appendChild(opt);
+      }
+      subSel.value = subName;
+    }
+    setCustom(false);
+  } else if (hidden.value.trim()) {
+    classSel.value = '__custom__'; customInput.value = hidden.value; setCustom(true);
+  } else {
+    fillSub(); setCustom(false);
+  }
+}
+
+/** Recompose the hidden "Class (Subclass)" value from a row's selectors. */
+function mcUpdateHidden(rowEl) {
+  const hidden = rowEl.querySelector('.mc-class-name');
+  const classSel = rowEl.querySelector('.mc-class-select');
+  const subSel = rowEl.querySelector('.mc-subclass-select');
+  const customInput = rowEl.querySelector('.mc-custom-input');
+  if (!hidden || !classSel) return;
+  let val = '';
+  if (classSel.value === '__custom__') {
+    val = (customInput?.value || '').trim();
+  } else if (classSel.value) {
+    const disp = MC_CLASSES[MC_CLASS_KEYS.indexOf(classSel.value)] || classSel.value;
+    const sub = subSel && subSel.value ? subSel.value : '';
+    val = sub ? `${disp} (${sub})` : disp;
+  }
+  hidden.value = val;
+  recalcAll();
+  saveSheet(true);
+}
+
+/** Build selectors for any multiclass rows that don't have them yet. */
+function initMulticlassUI() {
+  document.querySelectorAll('#multiclass-rows .mc-row').forEach(r => {
+    if (!r.querySelector('.mc-class-select')) mcBuildSelectors(r);
+  });
+}
+
 function addMCRow() {
   const container = document.getElementById('multiclass-rows');
   if (!container) return;
-
   const idx = mcRowCount++;
   const row = document.createElement('div');
   row.className = 'mc-row';
-  row.innerHTML = `
-    <input class="mc-class-name" type="text" placeholder="Class name" value="" data-mc-key="mc_class_${idx}" oninput="recalcAll(); saveSheet(true);" />
-    <input class="mc-level-num" type="number" value="1" min="0" max="40" data-mc-key="mc_level_${idx}" oninput="recalcAll(); saveSheet(true);" />
-    <span class="mc-label">levels</span>
-    <button class="mc-remove no-print" onclick="removeMCRow(this)">✕</button>
-  `;
+  row.innerHTML = mcRowHTML(idx, '', 1, true);
   container.appendChild(row);
+  mcBuildSelectors(row);
   recalcAll();
 }
 
@@ -1962,6 +2086,9 @@ function collectData() {
   data['_tools']     = toolItems;
   data['_feats']     = featItems;
   data['_dismissed_class_features'] = dismissedClassFeatures;
+  data['_spells'] = spellItems;
+  data['_spell_slot_overrides'] = spellSlotOverrides;
+  data['_spell_slots_used'] = spellSlotsUsed;
 
   // Journal entries
   data['_journal_entries'] = journalEntries;
@@ -2027,13 +2154,9 @@ function applySheetData(data) {
       data['_multiclass_rows'].forEach((row, idx) => {
         const div = document.createElement('div');
         div.className = 'mc-row';
-        div.innerHTML = `
-          <input class="mc-class-name" type="text" placeholder="Class name" value="${escapeHtml(row.name || '')}" data-mc-key="mc_class_${idx}" oninput="recalcAll(); saveSheet(true);" />
-          <input class="mc-level-num" type="number" value="${row.level || 0}" min="0" max="40" data-mc-key="mc_level_${idx}" oninput="recalcAll(); saveSheet(true);" />
-          <span class="mc-label">levels</span>
-          ${idx === 0 ? '' : `<button class="mc-remove no-print" onclick="removeMCRow(this)">✕</button>`}
-        `;
+        div.innerHTML = mcRowHTML(idx, row.name, row.level || 0, idx !== 0);
         container.appendChild(div);
+        mcBuildSelectors(div);
         mcRowCount++;
       });
     }
@@ -2101,6 +2224,11 @@ function applySheetData(data) {
   dismissedClassFeatures = Array.isArray(data['_dismissed_class_features'])
     ? data['_dismissed_class_features']
     : [];
+
+  // Spells (re-rendered via recalcAll below)
+  spellItems = Array.isArray(data['_spells']) ? data['_spells'] : [];
+  spellSlotOverrides = (data['_spell_slot_overrides'] && typeof data['_spell_slot_overrides'] === 'object') ? data['_spell_slot_overrides'] : {};
+  spellSlotsUsed = (data['_spell_slots_used'] && typeof data['_spell_slots_used'] === 'object') ? data['_spell_slots_used'] : {};
 
   // Journal entries
   if (Array.isArray(data['_journal_entries'])) {
@@ -2876,6 +3004,213 @@ function addFeatFromLibrary(libId) {
   renderFeatLibrary(); // refresh "Added" state
   saveSheet(true);
 }
+
+// ─────────────────────────────────────────────────────────────
+// SPELLS
+// ─────────────────────────────────────────────────────────────
+
+const SPELL_ABILITY = { cleric:'wis', druid:'wis', wizard:'int', bard:'cha', sorcerer:'cha', warlock:'cha', paladin:'cha', ranger:'wis' };
+const FULL_CASTERS = ['bard','cleric','druid','sorcerer','wizard'];
+const HALF_CASTERS = ['paladin','ranger'];
+// Standard multiclass spellcaster slots by combined caster level → [L1..L9].
+const SPELL_SLOT_TABLE = {
+  1:[2,0,0,0,0,0,0,0,0], 2:[3,0,0,0,0,0,0,0,0], 3:[4,2,0,0,0,0,0,0,0],
+  4:[4,3,0,0,0,0,0,0,0], 5:[4,3,2,0,0,0,0,0,0], 6:[4,3,3,0,0,0,0,0,0],
+  7:[4,3,3,1,0,0,0,0,0], 8:[4,3,3,2,0,0,0,0,0], 9:[4,3,3,3,1,0,0,0,0],
+  10:[4,3,3,3,2,0,0,0,0], 11:[4,3,3,3,2,1,0,0,0], 12:[4,3,3,3,2,1,0,0,0],
+  13:[4,3,3,3,2,1,1,0,0], 14:[4,3,3,3,2,1,1,0,0], 15:[4,3,3,3,2,1,1,1,0],
+  16:[4,3,3,3,2,1,1,1,0], 17:[4,3,3,3,2,1,1,1,1], 18:[4,3,3,3,3,1,1,1,1],
+  19:[4,3,3,3,3,2,1,1,1], 20:[4,3,3,3,3,2,2,1,1],
+};
+
+let spellItems = [];          // [{ index, prepared, domain? }]
+let spellSlotOverrides = {};  // { "1": n } manual max overrides
+let spellSlotsUsed = {};      // { "1": n }
+
+const capWord = s => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
+
+/** Caster classes present in the multiclass rows: [{ key, level }] (max level per class). */
+function getCasterClasses() {
+  const map = {};
+  readMulticlassRows().forEach(r => {
+    if (SPELL_ABILITY[r.key]) map[r.key] = Math.max(map[r.key] || 0, r.level);
+  });
+  return Object.keys(map).map(k => ({ key: k, level: map[k] }));
+}
+
+/** Combined caster level for the slot table (full casters full, half casters /2; warlock excluded). */
+function casterLevelForSlots() {
+  let lvl = 0;
+  getCasterClasses().forEach(c => {
+    if (FULL_CASTERS.includes(c.key)) lvl += c.level;
+    else if (HALF_CASTERS.includes(c.key)) lvl += Math.floor(c.level / 2);
+  });
+  return lvl;
+}
+
+function getSpellSlotMax(spellLevel) {
+  const ov = spellSlotOverrides[spellLevel];
+  if (ov != null && ov !== '') return parseInt(ov, 10) || 0;
+  const row = SPELL_SLOT_TABLE[Math.min(20, casterLevelForSlots())];
+  return row ? (row[spellLevel - 1] || 0) : 0;
+}
+
+function spellByIndex(idx) {
+  return (typeof SPELLS !== 'undefined') ? SPELLS.find(s => s.index === idx) : null;
+}
+
+/** Auto-add subclass/domain spells (always prepared) for the current subclasses. */
+function syncDomainSpells() {
+  if (typeof SUBCLASS_SPELLS === 'undefined') return;
+  readMulticlassRows().forEach(r => {
+    const slug = parseSubclassSlug(r.raw);
+    if (!slug) return;
+    const key = Object.keys(SUBCLASS_SPELLS).find(k => slug === k || slug.includes(k) || k.includes(slug));
+    if (!key) return;
+    SUBCLASS_SPELLS[key].forEach(idx => {
+      if (spellByIndex(idx) && !spellItems.some(s => s.index === idx)) {
+        spellItems.push({ index: idx, prepared: true, domain: true });
+      }
+    });
+  });
+}
+
+/** Rebuild the Spells section. Hidden unless a caster class is present. */
+function renderSpells() {
+  const section = document.getElementById('spells-section');
+  if (!section) return;
+  const casters = getCasterClasses();
+  if (casters.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = '';
+  syncDomainSpells();
+
+  // Spellcasting stats per caster class
+  const prof = profBonusForLevel(calcTotalLevel());
+  document.getElementById('spellcasting-stats').innerHTML = casters.map(c => {
+    const ab = SPELL_ABILITY[c.key];
+    const m = mod(getNum('stat_' + ab, 10));
+    return `<div class="sc-stat">
+      <div class="sc-stat-class">${capWord(c.key)} <span class="sc-stat-ab">${ab.toUpperCase()} · lvl ${c.level}</span></div>
+      <div class="sc-stat-nums"><span>Save DC <strong>${8 + prof + m}</strong></span><span>Spell Atk <strong>${fmtMod(prof + m)}</strong></span></div>
+    </div>`;
+  }).join('');
+
+  // Slot tracker
+  let slotsHtml = '';
+  for (let L = 1; L <= 9; L++) {
+    const max = getSpellSlotMax(L);
+    if (max <= 0 && spellSlotOverrides[L] == null) continue;
+    const used = Math.min(spellSlotsUsed[L] || 0, max);
+    slotsHtml += `<div class="slot-box">
+      <div class="slot-lvl">L${L}</div>
+      <div class="slot-track">${max - used}<span class="slot-of">/${max}</span></div>
+      <div class="slot-btns no-print">
+        <button onclick="spellSlotAdjust(${L},1)" title="Spend a slot">−</button>
+        <button onclick="spellSlotAdjust(${L},-1)" title="Regain a slot">+</button>
+      </div>
+      <input class="slot-override no-print" type="number" min="0" max="9" placeholder="auto:${max}" value="${spellSlotOverrides[L] != null ? spellSlotOverrides[L] : ''}" oninput="spellSlotOverride(${L}, this.value)" title="Override max slots" />
+    </div>`;
+  }
+  document.getElementById('spell-slots').innerHTML = slotsHtml
+    ? slotsHtml + `<button class="btn-small no-print slot-rest" onclick="resetSpellSlots()">↺ Long Rest</button>`
+    : '<span class="sub-note">No spell slots at this caster level yet.</span>';
+
+  renderSpellList();
+}
+
+function renderSpellList() {
+  const el = document.getElementById('spell-list');
+  if (!el) return;
+  if (spellItems.length === 0) { el.innerHTML = '<div class="spell-empty">No spells added yet — click “✨ Browse spells”.</div>'; return; }
+  const byLvl = {};
+  spellItems.forEach(item => {
+    const sp = spellByIndex(item.index);
+    if (sp) (byLvl[sp.level] = byLvl[sp.level] || []).push({ item, sp });
+  });
+  let html = '';
+  Object.keys(byLvl).map(Number).sort((a, b) => a - b).forEach(L => {
+    html += `<div class="spell-lvl-group"><div class="spell-lvl-title">${L === 0 ? 'Cantrips' : 'Level ' + L}</div>`;
+    byLvl[L].sort((a, b) => a.sp.name.localeCompare(b.sp.name)).forEach(({ item, sp }) => {
+      const tags = [sp.school, sp.concentration ? 'Conc' : '', sp.ritual ? 'Ritual' : '', item.domain ? 'Domain' : ''].filter(Boolean);
+      const prep = L === 0
+        ? '<span class="spell-prep-always" title="Cantrips are always prepared">✦</span>'
+        : `<input type="checkbox" class="spell-prep" ${item.prepared ? 'checked' : ''} onchange="toggleSpellPrepared('${sp.index}')" title="Prepared" />`;
+      html += `<div class="spell-row">
+        <div class="spell-row-head">
+          ${prep}
+          <span class="spell-name" onclick="this.closest('.spell-row').classList.toggle('open')">${escapeHtml(sp.name)}</span>
+          <span class="spell-tags">${tags.map(t => `<span class="spell-tag">${escapeHtml(t)}</span>`).join('')}</span>
+          ${item.domain ? '' : `<button class="dyn-delete no-print" onclick="removeSpell('${sp.index}')" title="Remove">×</button>`}
+        </div>
+        <div class="spell-detail">
+          <div class="spell-meta">${escapeHtml(sp.casting_time)} · ${escapeHtml(sp.range)} · ${escapeHtml(sp.components)}${sp.duration ? ' · ' + escapeHtml(sp.duration) : ''}</div>
+          <div class="spell-desc">${escapeHtml(sp.desc)}</div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function toggleSpellBrowser() {
+  const p = document.getElementById('spell-browser');
+  if (!p) return;
+  const open = p.style.display === 'none' || !p.style.display;
+  p.style.display = open ? '' : 'none';
+  if (open) { renderSpellBrowser(); document.getElementById('spell-search')?.focus(); }
+}
+
+function renderSpellBrowser() {
+  const list = document.getElementById('spell-browser-list');
+  if (!list || typeof SPELLS === 'undefined') return;
+  const casters = getCasterClasses().map(c => c.key);
+  const q = (document.getElementById('spell-search')?.value || '').trim().toLowerCase();
+  const matches = SPELLS.filter(s => s.classes.some(c => casters.includes(c))
+    && (!q || s.name.toLowerCase().includes(q) || (s.school || '').toLowerCase().includes(q)));
+  const byLvl = {};
+  matches.forEach(s => (byLvl[s.level] = byLvl[s.level] || []).push(s));
+  let html = '';
+  Object.keys(byLvl).map(Number).sort((a, b) => a - b).forEach(L => {
+    html += `<div class="spell-lvl-title">${L === 0 ? 'Cantrips' : 'Level ' + L}</div>`;
+    byLvl[L].sort((a, b) => a.name.localeCompare(b.name)).forEach(s => {
+      const added = spellItems.some(x => x.index === s.index);
+      const tags = [s.school, s.concentration ? 'Conc' : '', s.ritual ? 'Ritual' : ''].filter(Boolean);
+      html += `<div class="spell-lib-row">
+        <button class="btn-tiny spell-lib-add" ${added ? 'disabled' : ''} onclick="addSpell('${s.index}')">${added ? '✓' : '+'}</button>
+        <span class="spell-lib-name">${escapeHtml(s.name)}</span>
+        <span class="spell-lib-tags">${tags.map(t => `<span class="spell-tag">${escapeHtml(t)}</span>`).join('')}</span>
+      </div>`;
+    });
+  });
+  list.innerHTML = html || '<div class="spell-empty">No matching spells for your class.</div>';
+}
+
+function addSpell(idx) {
+  if (spellItems.some(s => s.index === idx)) return;
+  spellItems.push({ index: idx, prepared: true });
+  renderSpells(); renderSpellBrowser(); saveSheet(true);
+}
+function removeSpell(idx) {
+  spellItems = spellItems.filter(s => s.index !== idx);
+  renderSpells(); renderSpellBrowser(); saveSheet(true);
+}
+function toggleSpellPrepared(idx) {
+  const it = spellItems.find(s => s.index === idx);
+  if (it) it.prepared = !it.prepared;
+  saveSheet(true);
+}
+function spellSlotAdjust(L, delta) {
+  const max = getSpellSlotMax(L);
+  spellSlotsUsed[L] = Math.max(0, Math.min(max, (spellSlotsUsed[L] || 0) + delta));
+  renderSpells(); saveSheet(true);
+}
+function spellSlotOverride(L, val) {
+  if (val === '' || val == null) delete spellSlotOverrides[L];
+  else spellSlotOverrides[L] = parseInt(val, 10) || 0;
+  renderSpells(); saveSheet(true);
+}
+function resetSpellSlots() { spellSlotsUsed = {}; renderSpells(); saveSheet(true); }
 
 // ─────────────────────────────────────────────────────────────
 // MULTICLASS — AUTO CLASS FEATURES

@@ -113,3 +113,13 @@ const FEAT_LIBRARY = [
   { id: 'feat-eldritch-adept', name: 'Eldritch Adept', source: 'TCE', prerequisite: 'Spellcasting or Pact Magic feature',
     desc: 'Learn one Eldritch Invocation of your choice (any prerequisite must be met). You can swap it when you gain a level.' },
 ];
+
+// Subclass "always-prepared" / domain spells, by subclass slug (spell indexes).
+// Only those present in SPELLS are auto-added (non-SRD entries silently skip).
+const SUBCLASS_SPELLS = {
+  // Twilight Domain (Tasha's) domain spells.
+  'twilight-domain': [
+    'faerie-fire', 'sleep', 'moonbeam', 'see-invisibility', 'aura-of-vitality',
+    'leomunds-tiny-hut', 'aura-of-life', 'greater-invisibility', 'circle-of-power', 'mislead',
+  ],
+};
