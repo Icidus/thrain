@@ -11,8 +11,10 @@
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
   <script src="firebase.js?v=20260308a"></script>
   <script src="fishing-data.js?v=20260308b"></script>
+  <script src="class-features.js?v=20260529b"></script>
+  <script src="homebrew-content.js?v=20260529a"></script>
   <!-- Sheet logic -->
-  <script src="script.js?v=20260308b" defer></script>
+  <script src="script.js?v=20260529b" defer></script>
 </head>
 <body>
   <!-- TOOLBAR (hidden on print) -->
@@ -271,8 +273,9 @@
             <div class="field-label">Inspiration</div>
           </div>
           <div class="numa-block">
-            <input class="small-num" type="number" data-key="numa_current" value="20" min="0" max="20" />
-            <span class="field-label">/ <input class="small-num" type="number" data-key="numa_max" value="20" min="0" max="20" /> Numa</span>
+            <input class="small-num" type="number" data-key="numa_current" value="20" min="0" max="40" />
+            <span class="field-label">/ <input class="small-num" type="number" data-key="numa_max" value="20" min="0" max="40" /> Numa</span>
+            <span class="sub-note no-print" id="numa-level-note">+1 Numa per class level</span>
           </div>
         </section>
 
@@ -558,20 +561,40 @@
           <h2 class="section-title">Multiclass Breakdown</h2>
           <div id="multiclass-rows">
             <div class="mc-row">
-              <input class="mc-class-name" type="text" placeholder="Class name" value="Fighter (Rune Knight)" data-mc-key="mc_class_0" oninput="recalcAll()" />
-              <input class="mc-level-num" type="number" value="20" min="0" max="40" data-mc-key="mc_level_0" oninput="recalcAll()" />
+              <input class="mc-class-name" type="text" placeholder="Class name" list="class-name-options" value="Fighter (Rune Knight)" data-mc-key="mc_class_0" oninput="recalcAll(); saveSheet(true);" />
+              <input class="mc-level-num" type="number" value="20" min="0" max="40" data-mc-key="mc_level_0" oninput="recalcAll(); saveSheet(true);" />
               <span class="mc-label">levels</span>
               <button class="mc-remove no-print" onclick="removeMCRow(this)">✕</button>
             </div>
           </div>
+          <datalist id="class-name-options">
+            <option value="Barbarian"></option>
+            <option value="Bard"></option>
+            <option value="Cleric"></option>
+            <option value="Druid"></option>
+            <option value="Fighter"></option>
+            <option value="Monk"></option>
+            <option value="Paladin"></option>
+            <option value="Ranger"></option>
+            <option value="Rogue"></option>
+            <option value="Sorcerer"></option>
+            <option value="Warlock"></option>
+            <option value="Wizard"></option>
+          </datalist>
           <button class="btn-small no-print" onclick="addMCRow()">+ Add Multiclass</button>
           <div class="mc-total-row">
             Total Character Level: <strong id="mc-total">20</strong> &nbsp;|&nbsp; Prof Bonus: <strong id="mc-prof">+6</strong>
           </div>
+          <div class="mc-hp-note no-print" id="mc-hp-note" style="display:none">
+            <strong>⚠ Levels beyond 20:</strong> per DM rules you do <strong>not</strong> gain
+            "HP at Higher Levels" for any level past 20 (e.g. the 1d12+CON for Barbarian). You
+            still gain Hit Dice and all other class features. (+1 Numa point per class level.)
+          </div>
           <div class="mc-hint no-print">
             <strong>💡 What updates automatically when you add a level:</strong>
-            Proficiency Bonus, Total Level, Rune Save DC, Giant's Might uses, all skill/save totals, attack bonuses.
-            <br/><strong>What to add manually in the Level Up Log:</strong> new class features (Rage, Reckless Attack, Danger Sense etc), HP increase, new weapon proficiencies.
+            Proficiency Bonus, Total Level, Rune Save DC, Giant's Might uses, all skill/save totals,
+            attack bonuses, and <strong>class features</strong> (shown in the Class Features section below).
+            <br/><strong>Add manually in the Level Up Log:</strong> HP increase, new weapon proficiencies, subclass-specific choices.
           </div>
         </section>
 
@@ -643,7 +666,14 @@
         <section class="section feats-section">
           <div class="feats-header">
             <h2 class="section-title">Feats</h2>
-            <button class="btn-small no-print" onclick="addFeat()">+ Add Feat</button>
+            <div class="feats-actions no-print">
+              <button class="btn-small" onclick="toggleFeatBrowser()">🔍 Browse feats</button>
+              <button class="btn-small" onclick="addFeat()">+ Add Feat</button>
+            </div>
+          </div>
+          <div id="feat-browser" class="feat-browser no-print" style="display:none">
+            <input type="text" id="feat-search" class="feat-search-input" placeholder="Search feats by name or source…" oninput="renderFeatLibrary()" />
+            <div id="feat-library-list" class="feat-library-list"><!-- JS rendered --></div>
           </div>
           <div id="feats-list" class="feat-grid"><!-- JS rendered --></div>
         </section>
@@ -767,6 +797,16 @@
             <li>Your reach increases by <strong>5 ft</strong>.</li>
             <li><strong>Uses per Long Rest:</strong> Equal to Proficiency Bonus (<span id="gm-uses-text">6</span> at current level).</li>
           </ul>
+        </div>
+      </section>
+
+      <!-- MULTICLASS CLASS FEATURES (auto-populated) -->
+      <section class="section class-features-section">
+        <h2 class="section-title">📖 Class Features <span class="sub-note no-print" style="font-weight:normal">— auto-filled from your Multiclass Breakdown</span></h2>
+        <div id="class-features-list" class="class-features-list"></div>
+        <div class="class-features-empty no-print" id="class-features-empty">
+          Add a class in the <strong>Multiclass Breakdown</strong> above (e.g. Barbarian, level 3)
+          and its features appear here automatically.
         </div>
       </section>
 

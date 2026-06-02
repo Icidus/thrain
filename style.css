@@ -634,6 +634,57 @@ body {
 .mc-label { font-family: var(--font-ui); font-size: 0.75rem; color: var(--iron-light); }
 .mc-remove { background: none; border: none; cursor: pointer; color: var(--red-accent); font-size: 0.85rem; padding: 2px; }
 .mc-total-row { font-family: var(--font-ui); font-size: 0.82rem; margin-top: 6px; padding-top: 6px; border-top: 1px dashed var(--border); }
+.mc-hint { font-size: 0.7rem; line-height: 1.4; color: var(--iron-light); margin-top: 8px; }
+.mc-hint strong { color: var(--iron); }
+.mc-hp-note {
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  background: #fbeec1;
+  border-left: 3px solid var(--gold);
+  padding: 6px 8px;
+  border-radius: 0 4px 4px 0;
+  margin-top: 8px;
+}
+.mc-hp-note strong { color: var(--red-accent); }
+
+/* ──────────────────── CLASS FEATURES (auto from multiclass) ──────────────────── */
+.class-features-list { display: flex; flex-direction: column; gap: 12px; }
+.cf-group { }
+.cf-group-title {
+  font-family: var(--font-ui);
+  font-size: 0.9rem;
+  color: var(--red-accent);
+  margin: 0 0 6px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 3px;
+}
+.cf-group-title .sub-note { font-weight: normal; }
+.cf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+}
+.cf-card {
+  background: var(--parchment-dark);
+  border-left: 3px solid var(--gold);
+  padding: 6px 8px;
+  border-radius: 0 4px 4px 0;
+}
+.cf-card-header { display: flex; align-items: baseline; gap: 6px; }
+.cf-level {
+  font-family: var(--font-ui);
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--parchment);
+  background: var(--iron);
+  border-radius: 3px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+.cf-name { font-family: var(--font-ui); font-size: 0.78rem; font-weight: 700; color: var(--iron); flex: 1; }
+.cf-desc { font-size: 0.7rem; line-height: 1.4; color: var(--ink-soft); margin-top: 4px; white-space: pre-line; }
+.class-features-empty { font-size: 0.75rem; color: var(--iron-light); font-style: italic; }
 
 .btn-small {
   background: linear-gradient(135deg, var(--iron), #3a4050);
@@ -706,6 +757,35 @@ body {
 .feat-card { background: var(--parchment-dark); border-left: 3px solid var(--red-accent); padding: 5px 8px; border-radius: 0 4px 4px 0; }
 .feat-name { font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700; color: var(--red-accent); }
 .feat-desc { font-size: 0.72rem; line-height: 1.4; color: var(--ink-soft); }
+
+/* ── Feat library picker ── */
+.feats-actions { display: flex; gap: 6px; }
+.feat-browser {
+  background: var(--parchment-dark);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px;
+  margin-bottom: 8px;
+}
+.feat-search-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 5px 7px;
+  font-size: 0.8rem;
+  font-family: var(--font-body);
+  margin-bottom: 6px;
+}
+.feat-library-list { max-height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
+.feat-lib-row { display: flex; gap: 6px; align-items: flex-start; }
+.feat-lib-add { flex-shrink: 0; white-space: nowrap; }
+.feat-lib-add:disabled { background: var(--iron-light); color: var(--parchment); cursor: default; }
+.feat-lib-info { flex: 1; }
+.feat-lib-name { font-family: var(--font-ui); font-size: 0.75rem; font-weight: 700; color: var(--iron); }
+.feat-lib-meta { font-size: 0.66rem; color: var(--iron-light); margin-left: 5px; }
+.feat-lib-desc { font-size: 0.68rem; line-height: 1.35; color: var(--ink-soft); margin-top: 2px; }
+.feat-lib-empty { font-size: 0.72rem; color: var(--iron-light); font-style: italic; }
 
 /* ──────────────────── SENSES ──────────────────── */
 .senses-section .feature-list li { font-size: 0.77rem; }

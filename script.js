@@ -143,6 +143,7 @@ const DEFAULT_FEATS = [
 let languageItems = [];
 let toolItems = [];
 let featItems = [];
+let dismissedClassFeatures = []; // ids of auto class features the user has hidden
 
 // ─────────────────────────────────────────────────────────────
 // INITIALIZATION
@@ -369,6 +370,9 @@ function recalcAll() {
 
   // Update XP table highlights
   updateXPTableHighlights(getNum('current_xp', 355000));
+
+  // Auto-populate class features from the multiclass rows
+  syncMulticlassFeatures();
 
   renderFishingSummary();
 }
@@ -1763,6 +1767,7 @@ function collectData() {
   data['_languages'] = languageItems;
   data['_tools']     = toolItems;
   data['_feats']     = featItems;
+  data['_dismissed_class_features'] = dismissedClassFeatures;
 
   // Journal entries
   data['_journal_entries'] = journalEntries;
@@ -1897,6 +1902,11 @@ function applySheetData(data) {
     featItems = DEFAULT_FEATS.map(f => ({ ...f }));
   }
   renderFeats();
+
+  // Dismissed auto class features (re-rendered from CLASS_FEATURES via recalcAll below)
+  dismissedClassFeatures = Array.isArray(data['_dismissed_class_features'])
+    ? data['_dismissed_class_features']
+    : [];
 
   // Journal entries
   if (Array.isArray(data['_journal_entries'])) {
@@ -2611,6 +2621,209 @@ function addFeat() {
   const desc = prompt('Description:', '') || '';
   featItems.push({ id: 'fe' + Date.now(), name: name.trim(), desc: desc.trim() });
   renderFeats();
+  saveSheet(true);
+}
+
+// ─────────────────────────────────────────────────────────────
+// FEAT LIBRARY — SEARCHABLE PICKER
+// ─────────────────────────────────────────────────────────────
+
+/** Show/hide the feat browser panel and render its list. */
+function toggleFeatBrowser() {
+  const panel = document.getElementById('feat-browser');
+  if (!panel) return;
+  const open = panel.style.display === 'none' || !panel.style.display;
+  panel.style.display = open ? '' : 'none';
+  if (open) {
+    renderFeatLibrary();
+    document.getElementById('feat-search')?.focus();
+  }
+}
+
+/** True if a library feat is already in the sheet (by id or matching name). */
+function featAlreadyAdded(libFeat) {
+  return featItems.some(f =>
+    f.libId === libFeat.id ||
+    f.name.trim().toLowerCase() === libFeat.name.trim().toLowerCase());
+}
+
+/** Render the filtered feat library list. */
+function renderFeatLibrary() {
+  const list = document.getElementById('feat-library-list');
+  if (!list || typeof FEAT_LIBRARY === 'undefined') return;
+  const q = (document.getElementById('feat-search')?.value || '').trim().toLowerCase();
+  const matches = FEAT_LIBRARY.filter(f =>
+    !q || f.name.toLowerCase().includes(q) || (f.source || '').toLowerCase().includes(q));
+
+  list.innerHTML = matches.map(f => {
+    const added = featAlreadyAdded(f);
+    const prereq = f.prerequisite ? ` · <em>${escapeHtml(f.prerequisite)}</em>` : '';
+    return `
+      <div class="feat-lib-row">
+        <button class="feat-lib-add btn-tiny" ${added ? 'disabled' : ''}
+          onclick="addFeatFromLibrary('${f.id}')">${added ? '✓ Added' : '+ Add'}</button>
+        <div class="feat-lib-info">
+          <span class="feat-lib-name">${escapeHtml(f.name)}</span>
+          <span class="feat-lib-meta">${escapeHtml(f.source || '')}${prereq}</span>
+          <div class="feat-lib-desc">${escapeHtml(f.desc)}</div>
+        </div>
+      </div>`;
+  }).join('') || '<div class="feat-lib-empty">No matching feats.</div>';
+}
+
+/** Add a feat from the library to the sheet's Feats section. */
+function addFeatFromLibrary(libId) {
+  if (typeof FEAT_LIBRARY === 'undefined') return;
+  const lib = FEAT_LIBRARY.find(f => f.id === libId);
+  if (!lib || featAlreadyAdded(lib)) return;
+  const desc = lib.prerequisite ? `(${lib.prerequisite}) ${lib.desc}` : lib.desc;
+  featItems.push({ id: 'fe' + Date.now(), libId: lib.id, name: lib.name, desc });
+  renderFeats();
+  renderFeatLibrary(); // refresh "Added" state
+  saveSheet(true);
+}
+
+// ─────────────────────────────────────────────────────────────
+// MULTICLASS — AUTO CLASS FEATURES
+// ─────────────────────────────────────────────────────────────
+
+/** Normalize free-text class name to a CLASS_FEATURES key.
+ *  "Fighter (Rune Knight)" -> "fighter" (subclass parenthetical stripped). */
+function normalizeClassName(raw) {
+  if (!raw) return '';
+  return String(raw).replace(/\(.*?\)/g, '').trim().toLowerCase();
+}
+
+/** Read multiclass rows as [{ raw, key, level }]. */
+function readMulticlassRows() {
+  const rows = [];
+  document.querySelectorAll('[data-mc-key^="mc_class_"]').forEach(nameEl => {
+    const idx = nameEl.dataset.mcKey.replace('mc_class_', '');
+    const levelEl = document.querySelector(`[data-mc-key="mc_level_${idx}"]`);
+    const level = levelEl ? (parseInt(levelEl.value, 10) || 0) : 0;
+    rows.push({ raw: nameEl.value || '', key: normalizeClassName(nameEl.value), level });
+  });
+  return rows;
+}
+
+/** Unique dismiss-key for a feature within a class/subclass. */
+function classFeatureKey(classKey, featureId) {
+  return `${classKey}:${featureId}`;
+}
+
+/** Slugify a string: lowercase, non-alphanumerics -> single hyphens. */
+function slugify(s) {
+  return String(s || '').toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+/** Extract a subclass slug from the parenthetical, e.g. "Fighter (Rune Knight)" -> "rune-knight". */
+function parseSubclassSlug(raw) {
+  const m = String(raw || '').match(/\(([^)]+)\)/);
+  return m ? slugify(m[1]) : '';
+}
+
+// Subclasses authored in homebrew but rendered by a dedicated bespoke section
+// instead of the generic Class Features list (avoids duplication).
+const SUBCLASS_RENDER_SKIP = ['rune-knight'];
+
+/** Resolve a typed subclass slug to known features (homebrew first, then SRD).
+ *  Matches exactly, or by token inclusion ("path-of-the-berserker" -> "berserker").
+ *  Returns { slug, features } or null. */
+function resolveSubclassFeatures(parenSlug) {
+  if (!parenSlug || SUBCLASS_RENDER_SKIP.includes(parenSlug)) return null;
+  const extra = (typeof EXTRA_SUBCLASS_FEATURES !== 'undefined') ? EXTRA_SUBCLASS_FEATURES : {};
+  const srd = (typeof SUBCLASS_FEATURES !== 'undefined') ? SUBCLASS_FEATURES : {};
+  const known = { ...srd, ...extra }; // homebrew overrides SRD on collision
+  if (known[parenSlug]) return { slug: parenSlug, features: known[parenSlug] };
+  for (const k of Object.keys(known)) {
+    if (SUBCLASS_RENDER_SKIP.includes(k)) continue;
+    if (parenSlug.includes(k) || k.includes(parenSlug)) return { slug: k, features: known[k] };
+  }
+  return null;
+}
+
+/** Rebuild the auto "Class Features" section from the multiclass rows. */
+function syncMulticlassFeatures() {
+  const container = document.getElementById('class-features-list');
+  if (!container || typeof CLASS_FEATURES === 'undefined') return;
+
+  const rows = readMulticlassRows();
+  let anyOver20 = false;
+  let hiddenCount = 0;
+  const groups = [];
+
+  rows.forEach(row => {
+    if (row.level > 20) anyOver20 = true;
+
+    // Base-class features, each tagged with its dismiss class-key.
+    const tagged = [];
+    const base = CLASS_FEATURES[row.key];
+    if (base) base.forEach(f => tagged.push({ f, ck: row.key }));
+
+    // Subclass features (parsed from the parenthetical), if recognized.
+    const sub = resolveSubclassFeatures(parseSubclassSlug(row.raw));
+    if (sub) sub.features.forEach(f => tagged.push({ f, ck: `sub:${sub.slug}` }));
+
+    const eligible = tagged.filter(t => t.f.level <= row.level);
+    const visible = eligible.filter(t => !dismissedClassFeatures.includes(classFeatureKey(t.ck, t.f.id)));
+    hiddenCount += eligible.length - visible.length;
+    if (visible.length === 0) return;
+
+    // Sort by level then name for a stable, readable group.
+    visible.sort((a, b) => a.f.level - b.f.level || a.f.name.localeCompare(b.f.name));
+    groups.push({ label: row.raw.trim(), level: row.level, items: visible });
+  });
+
+  container.innerHTML = '';
+  groups.forEach(g => {
+    const block = document.createElement('div');
+    block.className = 'cf-group';
+    const cards = g.items.map(({ f, ck }) => `
+      <div class="cf-card">
+        <div class="cf-card-header">
+          <span class="cf-level">Lv ${f.level}</span>
+          <span class="cf-name">${escapeHtml(f.name)}</span>
+          <button class="dyn-delete no-print" title="Hide this feature"
+            onclick="dismissClassFeature('${ck}', '${f.id}')">×</button>
+        </div>
+        <div class="cf-desc">${escapeHtml(f.desc)}</div>
+      </div>`).join('');
+    block.innerHTML =
+      `<h3 class="cf-group-title">${escapeHtml(g.label)} <span class="sub-note">(${g.level} levels)</span></h3>
+       <div class="cf-grid">${cards}</div>`;
+    container.appendChild(block);
+  });
+
+  if (hiddenCount > 0) {
+    const restore = document.createElement('button');
+    restore.className = 'btn-small no-print';
+    restore.textContent = `↺ Restore ${hiddenCount} hidden feature${hiddenCount === 1 ? '' : 's'}`;
+    restore.onclick = restoreDismissedClassFeatures;
+    container.appendChild(restore);
+  }
+
+  // Empty-state hint
+  const empty = document.getElementById('class-features-empty');
+  if (empty) empty.style.display = groups.length === 0 ? '' : 'none';
+
+  // House-rule: HP-at-higher-levels note when any class exceeds level 20
+  const hpNote = document.getElementById('mc-hp-note');
+  if (hpNote) hpNote.style.display = anyOver20 ? '' : 'none';
+}
+
+/** Hide one auto class feature; persists across reloads. */
+function dismissClassFeature(classKey, featureId) {
+  const key = classFeatureKey(classKey, featureId);
+  if (!dismissedClassFeatures.includes(key)) dismissedClassFeatures.push(key);
+  syncMulticlassFeatures();
+  saveSheet(true);
+}
+
+/** Un-hide all dismissed auto class features. */
+function restoreDismissedClassFeatures() {
+  dismissedClassFeatures = [];
+  syncMulticlassFeatures();
   saveSheet(true);
 }
 
