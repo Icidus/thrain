@@ -35,6 +35,39 @@ const EXTRA_SUBCLASS_FEATURES = {
     { id: 'rk-runic-juggernaut', level: 18, name: 'Runic Juggernaut',
       desc: 'Giant’s Might’s extra damage die becomes 1d10, you can become Huge, and your reach increases by 5 feet while enlarged.' },
   ],
+
+  // Xanathar's Guide to Everything — Wizard: War Magic.
+  // Not in SUBCLASS_RENDER_SKIP, so these DO render in the Class Features section.
+  'war-magic': [
+    { id: 'wm-arcane-deflection', level: 2, name: 'Arcane Deflection',
+      desc: 'Reaction (when hit by an attack or you fail a save): gain +2 AC against that attack, or +4 to that saving throw. Until the end of your next turn you can then cast only cantrips.' },
+    { id: 'wm-tactical-wit', level: 2, name: 'Tactical Wit',
+      desc: 'You add your Intelligence modifier to your initiative rolls.' },
+    { id: 'wm-power-surge', level: 6, name: 'Power Surge',
+      desc: 'Store power surges (max = your INT modifier, min 1). Gain one when you end a spell early with a successful save or by countering/dispelling it; regain to one on a long rest. Spend one to add force damage equal to half your wizard level to one damage roll of a spell.' },
+    { id: 'wm-durable-magic', level: 10, name: 'Durable Magic',
+      desc: 'While you maintain concentration on a spell, you gain +2 AC and +2 to all saving throws.' },
+    { id: 'wm-deflecting-shroud', level: 14, name: 'Deflecting Shroud',
+      desc: 'When you use Arcane Deflection, magical energy arcs to up to three creatures of your choice within 60 ft, each taking force damage equal to half your wizard level.' },
+  ],
+
+  // Tasha's Cauldron of Everything — Cleric: Twilight Domain.
+  'twilight-domain': [
+    { id: 'tw-bonus-prof', level: 1, name: 'Bonus Proficiencies',
+      desc: 'You gain proficiency with martial weapons and heavy armor.' },
+    { id: 'tw-eyes-of-night', level: 1, name: 'Eyes of Night',
+      desc: 'You have darkvision out to 300 ft. As an action you can share it with willing creatures (number = WIS modifier, min 1) for 1 hour. Uses = WIS modifier per long rest, or by spending a spell slot.' },
+    { id: 'tw-vigilant-blessing', level: 1, name: 'Vigilant Blessing',
+      desc: 'As an action, give yourself or one creature you touch advantage on the next initiative roll. This benefit ends immediately after the roll or if you use the feature again.' },
+    { id: 'tw-twilight-sanctuary', level: 2, name: 'Channel Divinity: Twilight Sanctuary',
+      desc: 'As an action, create a 30-ft-radius sphere of dim light centered on you for 1 minute. When a creature (you choose) starts its turn in the sphere, it gains 1d6 + cleric level temporary HP, or you end one charm or fright effect on it.' },
+    { id: 'tw-steps-of-night', level: 6, name: 'Steps of Night',
+      desc: 'While in dim light or darkness, you can use a bonus action to gain a flying speed equal to your walking speed for 1 minute. Uses = WIS modifier per long rest, or by spending a spell slot.' },
+    { id: 'tw-divine-strike', level: 8, name: 'Divine Strike',
+      desc: 'Once on each of your turns when you hit with a weapon attack, deal an extra 1d8 radiant damage (increases to 2d8 at 14th level).' },
+    { id: 'tw-twilight-shroud', level: 17, name: 'Twilight Shroud',
+      desc: 'You and allies have half cover while within your Twilight Sanctuary.' },
+  ],
 };
 
 // Player feats. Sources: PHB = Player's Handbook, TCE = Tasha's Cauldron of
