@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Thrain Ironhammerson — Character Sheet</title>
-  <link rel="stylesheet" href="style.css?v=20260601a" />
+  <link rel="stylesheet" href="style.css?v=20260601b" />
   <!-- Firebase SDK (compat — no bundler needed) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
@@ -14,8 +14,8 @@
   <script src="class-features.js?v=20260529b"></script>
   <script src="homebrew-content.js?v=20260529a"></script>
   <!-- Sheet logic -->
-  <script src="script.js?v=20260529b" defer></script>
-  <script src="dice-roller.js?v=20260601a" defer></script>
+  <script src="script.js?v=20260601a" defer></script>
+  <script src="dice-roller.js?v=20260601b" defer></script>
 </head>
 <body>
   <!-- TOOLBAR (hidden on print) -->
@@ -164,6 +164,9 @@
         <label class="bt-opt"><input type="checkbox" id="bt-belt-bt"> Belt of Giant Str</label>
       </div>
 
+      <!-- Passive reminders injected from multiclass (e.g. Danger Sense) -->
+      <div id="bt-passives" class="bt-passives"></div>
+
       <!-- Four columns: Actions / Bonus / Reactions / Result -->
       <div class="bt-columns">
 
@@ -177,6 +180,7 @@
           <button class="bt-btn bt-action" onclick="btAttack('axe')">&#129683; Battle Axe</button>
           <button class="bt-btn bt-action bt-switch-btn" onclick="btSwitchWeapon()" title="Switching weapons costs half your movement">&#128260; Switch Weapon <span class="bt-tag">&frac12; move</span></button>
           <button class="bt-btn bt-undo-btn" onclick="btUndo()" title="Undo last attack">&#8617; Undo Last Attack</button>
+          <div id="bt-mc-action" class="bt-mc-abilities"></div>
         </div>
 
         <!-- BONUS ACTIONS -->
@@ -188,6 +192,7 @@
           <button class="bt-btn bt-bonus" onclick="btUse('gwm_bonus')">&#128481; GWM Bonus Atk <span class="bt-tag">after crit/kill</span></button>
           <button class="bt-btn bt-bonus" onclick="btUse('hill_rune')">&#9968; Hill Rune</button>
           <button class="bt-btn bt-bonus" onclick="btUse('storm_rune')">&#9889; Storm Rune</button>
+          <div id="bt-mc-bonus" class="bt-mc-abilities"></div>
         </div>
 
         <!-- REACTIONS -->
@@ -199,6 +204,7 @@
           <button class="bt-btn bt-reaction" onclick="btUse('runic_shield')">&#128737; Runic Shield</button>
           <button class="bt-btn bt-reaction" onclick="btUse('indomitable')">&#128170; Indomitable</button>
           <button class="bt-btn bt-reaction" onclick="btUse('sentinel_oa')">&#128737; Sentinel OA</button>
+          <div id="bt-mc-reaction" class="bt-mc-abilities"></div>
         </div>
 
         <!-- RESULT + LOG -->

@@ -216,8 +216,26 @@
     renderLog();
   }
 
-  // Expose a tiny API for testing / external triggers.
-  window.diceRoller = { rollCheck, rollExpression, rollInitiative, clearLog, _getLog: () => rollLog };
+  /** Log a pre-computed roll (used by the battle tracker). */
+  function pushEntry(entry) {
+    addLogEntry({
+      label: entry.label || 'Roll',
+      detail: entry.detail || '',
+      total: (entry.total === undefined ? '—' : entry.total),
+      crit: !!entry.crit,
+      fumble: !!entry.fumble,
+    });
+  }
+
+  /** Roll a dice expression AND log it; returns { total, detail } or null. */
+  function rollAndLog(label, expr) {
+    const res = rollExpression(expr);
+    if (res) addLogEntry({ label, detail: `${res.detail} = ${res.total}`, total: res.total });
+    return res;
+  }
+
+  // Expose a tiny API for testing / external triggers (e.g. the battle tracker).
+  window.diceRoller = { rollCheck, rollExpression, rollInitiative, clearLog, pushEntry, rollAndLog, _getLog: () => rollLog };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);

@@ -1051,6 +1051,7 @@ function btRender() {
   // Update move slot label with remaining feet
   const moveLbl = document.querySelector('#bt-move-slot .bt-eco-label');
   if (moveLbl) moveLbl.textContent = `Move (${btState.moveLeft}/${btState.maxMove}ft)`;
+  btRenderClassAbilities();
   btRenderLog();
 }
 
@@ -1230,6 +1231,12 @@ function btAttack(weapon) {
   const damageFormula = `${damageLabel}${gmRoll > 0 ? ' + 1d10' : ''}`;
   const damageSummary = `${rolledParts.join(' + ')} ${damageBonusText} = <strong>${totalDmg}</strong>`;
 
+  // Mirror the roll into the persistent dice tracker
+  if (window.diceRoller && window.diceRoller.pushEntry) {
+    window.diceRoller.pushEntry({ label: `${weaponLabel} (hit)`, detail: `d20(${d20})${fmtMod(hitBonus)} = ${totalHit}`, total: totalHit, crit: isCrit, fumble: isFumble });
+    window.diceRoller.pushEntry({ label: `${weaponLabel} (dmg)`, detail: `${damageFormula} ${rolledParts.join('+')} ${damageBonusText} = ${totalDmg}`, total: totalDmg });
+  }
+
   btShowResult(`
     <div class="bt-result-card">
       <div class="bt-result-head">⚔ Attack ${atkNum} of 4 &mdash; ${weaponLabel}</div>
@@ -1310,7 +1317,186 @@ function btSwitchWeapon() {
 }
 
 /** Handle bonus/reaction abilities */
+// ── Multiclass abilities (data-driven) ──────────────────────────────────
+// Fighter/Rune Knight remains hardcoded above. These are injected into the
+// tracker for any OTHER class present in the Multiclass Breakdown, gated by
+// level and subclass. Add a class entry here to support more multiclasses.
+const BT_CLASS_ABILITIES = {
+  barbarian: {
+    label: 'Barbarian',
+    abilities: [
+      { key: 'mc_rage', label: '🔥 Rage', economy: 'bonus', minLevel: 1,
+        build: () => ({ html: `<div class="bt-result-card bt-card-bonus">
+          <div class="bt-result-head">🔥 Rage (Bonus Action)</div>
+          <ul class="bt-result-list">
+            <li><strong>Advantage</strong> on STR checks &amp; saves</li>
+            <li><strong>+${btRageDamage()}</strong> melee damage on STR attacks</li>
+            <li><strong>Resistance</strong> to bludgeoning, piercing &amp; slashing</li>
+            <li>Lasts 1 min (while you attack or take damage each round)</li>
+          </ul>
+          <div class="bt-result-notes">✎ Track rage rounds · can't cast/concentrate while raging</div>
+        </div>` }) },
+      { key: 'mc_reckless', label: '⚡ Reckless Attack', economy: 'free', minLevel: 2,
+        build: () => ({ html: `<div class="bt-result-card bt-card-action">
+          <div class="bt-result-head">⚡ Reckless Attack (declare on your first attack)</div>
+          <ul class="bt-result-list">
+            <li><strong>Advantage</strong> on melee STR attack rolls this turn</li>
+            <li>⚠ Attacks <strong>against you</strong> have advantage until your next turn</li>
+          </ul>
+          <div class="bt-result-notes">Tip: set ADV in the dice panel, or roll the dice twice and keep the higher.</div>
+        </div>` }) },
+      { key: 'mc_danger_sense', label: 'Danger Sense', economy: 'passive', minLevel: 2,
+        note: '🜂 Danger Sense — advantage on DEX saves vs. effects you can see.' },
+    ],
+    subclasses: {
+      berserker: [
+        { key: 'mc_frenzy', label: '🗡 Frenzy Attack', economy: 'bonus', minLevel: 3,
+          build: (s) => {
+            const hit = s.mStr + s.prof;
+            return {
+              html: `<div class="bt-result-card bt-card-bonus">
+                <div class="bt-result-head">🗡 Frenzy — Bonus-Action Melee Attack (while raging)</div>
+                <div class="bt-result-dice-row">
+                  <div class="bt-dice-block bt-hit-block"><div class="bt-dice-label">To Hit:</div><div class="bt-dice-value">1d20 <span class="bt-bonus">${fmtMod(hit)}</span></div></div>
+                  <div class="bt-dice-arrow">&#10132;</div>
+                  <div class="bt-dice-block bt-dmg-block"><div class="bt-dice-label">Damage:</div><div class="bt-dice-value">1d8 <span class="bt-bonus">${fmtMod(s.mStr)}</span> <span class="bt-tag">+ weapon die</span></div></div>
+                </div>
+                <div class="bt-result-notes">⚠ Exhaustion when your rage ends (Berserker Frenzy)</div>
+              </div>`,
+              roll: { kind: 'attack', label: 'Frenzy Attack', hit, dmg: '1d8', dmgBonus: s.mStr },
+            };
+          } },
+      ],
+    },
+  },
+};
+
+/** Highest Barbarian level across the multiclass rows. */
+function btBarbarianLevel() {
+  let lvl = 0;
+  readMulticlassRows().forEach(r => { if (r.key === 'barbarian') lvl = Math.max(lvl, r.level); });
+  return lvl;
+}
+/** Rage bonus damage by Barbarian level: +2 / +3 (9th) / +4 (16th). */
+function btRageDamage() {
+  const l = btBarbarianLevel();
+  return l >= 16 ? 4 : l >= 9 ? 3 : 2;
+}
+
+let btDynamicAbilities = {}; // key -> ability def (for btUse lookup)
+let btPendingRolls = {};     // key -> roll spec (for the 🎲 Roll button)
+
+/** Roll specs for the hardcoded dice cards, so they get a Roll button too. */
+const BT_HARDCODED_ROLLS = {
+  pam_bonus:   (s) => ({ kind: 'attack', label: 'PAM Butt Attack', hit: s.mStr + s.prof, dmg: '1d4', dmgBonus: s.mStr }),
+  gwm_bonus:   (s) => ({ kind: 'attack', label: 'GWM Bonus Attack', hit: s.mStr + s.prof + DWARVEN_THROWER_BONUS, dmg: '1d8', dmgBonus: s.mStr + DWARVEN_THROWER_BONUS }),
+  sentinel_oa: (s) => ({ kind: 'attack', label: 'Sentinel OA', hit: s.mStr + s.prof + DWARVEN_THROWER_BONUS, dmg: '1d8', dmgBonus: s.mStr + DWARVEN_THROWER_BONUS }),
+  second_wind: (s) => ({ kind: 'expr', label: 'Second Wind heal', expr: `1d10+${s.totalLevel}` }),
+};
+
+/** (Re)build the injected multiclass ability buttons from the multiclass rows. */
+function btRenderClassAbilities() {
+  const cols = {
+    action: document.getElementById('bt-mc-action'),
+    bonus: document.getElementById('bt-mc-bonus'),
+    reaction: document.getElementById('bt-mc-reaction'),
+  };
+  if (!cols.action || !cols.bonus || !cols.reaction) return;
+  cols.action.innerHTML = ''; cols.bonus.innerHTML = ''; cols.reaction.innerHTML = '';
+  const passivesEl = document.getElementById('bt-passives');
+  if (passivesEl) passivesEl.innerHTML = '';
+  btDynamicAbilities = {};
+  const passiveNotes = [];
+  const ecoBtnClass = { action: 'bt-action', free: 'bt-action', bonus: 'bt-bonus', reaction: 'bt-reaction' };
+
+  readMulticlassRows().forEach(row => {
+    const def = BT_CLASS_ABILITIES[row.key];
+    if (!def) return; // Fighter (hardcoded) & unknown classes are skipped
+    const list = def.abilities.filter(a => row.level >= (a.minLevel || 1));
+    const subSlug = parseSubclassSlug(row.raw);
+    if (subSlug && def.subclasses) {
+      Object.keys(def.subclasses).forEach(sk => {
+        if (subSlug === sk || subSlug.includes(sk) || sk.includes(subSlug)) {
+          def.subclasses[sk].forEach(a => { if (row.level >= (a.minLevel || 1)) list.push(a); });
+        }
+      });
+    }
+    list.forEach(a => {
+      btDynamicAbilities[a.key] = a;
+      if (a.economy === 'passive') { if (a.note) passiveNotes.push(a.note); return; }
+      const col = cols[a.economy] || cols.action;
+      const btn = document.createElement('button');
+      btn.className = `bt-btn ${ecoBtnClass[a.economy] || 'bt-action'} bt-mc-btn`;
+      btn.innerHTML = `${a.label} <span class="bt-tag">${def.label}</span>`;
+      btn.addEventListener('click', () => btUse(a.key));
+      col.appendChild(btn);
+    });
+  });
+
+  if (passivesEl && passiveNotes.length) {
+    passivesEl.innerHTML = passiveNotes.map(n => `<span class="bt-passive-note">${n}</span>`).join('');
+  }
+}
+
+/** HTML for a 🎲 Roll button + output slot on a result card. */
+function btRollButtonHtml(key, spec) {
+  return `<div class="bt-roll-row">
+    <button class="bt-roll-btn" onclick="btRollAbility('${key}')">🎲 Roll ${escapeHtml(spec.label || '')}</button>
+    <span id="bt-roll-out-${key}" class="bt-roll-out"></span>
+  </div>`;
+}
+
+/** Execute a stored roll spec: roll, show inline, and log to the dice tracker. */
+function btRollAbility(key) {
+  const spec = btPendingRolls[key];
+  if (!spec) return;
+  const out = document.getElementById('bt-roll-out-' + key);
+  if (spec.kind === 'attack') {
+    const d20 = Math.ceil(Math.random() * 20);
+    const crit = d20 === 20, fumble = d20 === 1;
+    const totalHit = d20 + spec.hit;
+    const [dc, ds] = spec.dmg.match(/(\d+)d(\d+)/).slice(1).map(Number);
+    const dmg = btRollDice(crit ? dc * 2 : dc, ds);
+    const totalDmg = dmg.total + (spec.dmgBonus || 0);
+    const tag = crit ? ' <strong style="color:#1e7e34">CRIT!</strong>' : fumble ? ' <strong style="color:#b30000">FUMBLE</strong>' : '';
+    if (out) out.innerHTML = `Hit <strong>${totalHit}</strong>${tag} · Dmg <strong>${totalDmg}</strong>
+      <span class="bt-roll-detail">[d20 ${d20}${fmtMod(spec.hit)}; ${spec.dmg}${crit ? '×2' : ''} ${dmg.rolls.join('+')}${spec.dmgBonus ? fmtMod(spec.dmgBonus) : ''}]</span>`;
+    if (window.diceRoller && window.diceRoller.pushEntry) {
+      window.diceRoller.pushEntry({ label: `${spec.label} (hit)`, detail: `d20(${d20})${fmtMod(spec.hit)} = ${totalHit}`, total: totalHit, crit, fumble });
+      window.diceRoller.pushEntry({ label: `${spec.label} (dmg)`, detail: `${spec.dmg}${crit ? '×2' : ''}(${dmg.rolls.join(',')})${spec.dmgBonus ? fmtMod(spec.dmgBonus) : ''} = ${totalDmg}`, total: totalDmg });
+    }
+  } else if (spec.kind === 'expr') {
+    let res = null;
+    if (window.diceRoller && window.diceRoller.rollAndLog) res = window.diceRoller.rollAndLog(spec.label, spec.expr);
+    if (out && res) out.innerHTML = `<strong>${res.total}</strong> <span class="bt-roll-detail">[${res.detail}]</span>`;
+  }
+}
+
+/** Generic handler for a data-driven multiclass ability. */
+function btUseDynamic(def) {
+  const eco = def.economy;
+  if (eco === 'bonus' && btState.bonusUsed) { btShowResult('<div class="bt-result-warn">⚠ Bonus action already used this round.</div>'); return; }
+  if (eco === 'reaction' && btState.reactionUsed) { btShowResult('<div class="bt-result-warn">⚠ Reaction already used this round.</div>'); return; }
+  if (eco === 'action' && btState.actionUsed) { btShowResult('<div class="bt-result-warn">⚠ Action already used this round.</div>'); return; }
+
+  const built = def.build ? def.build(btGetStats()) : { html: `<div class="bt-result-card"><div class="bt-result-head">${def.label}</div></div>` };
+  if (eco === 'bonus') btState.bonusUsed = true;
+  else if (eco === 'reaction') btState.reactionUsed = true;
+  else if (eco === 'action') btState.actionUsed = true;
+
+  const logType = eco === 'reaction' ? 'reaction' : eco === 'free' ? 'attack' : 'bonus';
+  btAddLog(String(def.label).replace(/<[^>]+>/g, '').trim(), logType);
+
+  let html = built.html;
+  if (built.roll) { btPendingRolls[def.key] = built.roll; html += btRollButtonHtml(def.key, built.roll); }
+  btRender();
+  btShowResult(html);
+}
+
 function btUse(ability) {
+  // Data-driven multiclass abilities take precedence.
+  if (btDynamicAbilities[ability]) { btUseDynamic(btDynamicAbilities[ability]); return; }
+
   const s = btGetStats();
   let html = '';
 
@@ -1494,7 +1680,14 @@ function btUse(ability) {
   }
 
   btRender();
-  if (html) btShowResult(html);
+  if (html) {
+    if (BT_HARDCODED_ROLLS[ability]) {
+      const spec = BT_HARDCODED_ROLLS[ability](s);
+      btPendingRolls[ability] = spec;
+      html += btRollButtonHtml(ability, spec);
+    }
+    btShowResult(html);
+  }
 }
 
 // Explicitly expose battle-tracker functions to global scope for inline onclick handlers
@@ -1507,6 +1700,7 @@ window.btUse          = btUse;
 window.btConfirmHit   = btConfirmHit;
 window.btUndo         = btUndo;
 window.btSwitchWeapon = btSwitchWeapon;
+window.btRollAbility  = btRollAbility;
 
 
 // ─────────────────────────────────────────────────────────────
