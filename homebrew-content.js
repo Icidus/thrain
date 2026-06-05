@@ -114,12 +114,41 @@ const FEAT_LIBRARY = [
     desc: 'Learn one Eldritch Invocation of your choice (any prerequisite must be met). You can swap it when you gain a level.' },
 ];
 
-// Subclass "always-prepared" / domain spells, by subclass slug (spell indexes).
-// Only those present in SPELLS are auto-added (non-SRD entries silently skip).
+// Subclass "always-prepared" / domain spells, by subclass slug.
+// `level` is the CLASS level at which the spell is granted — only added once the
+// character reaches it. Spells not in SPELLS fall back to EXTRA_SPELLS below.
 const SUBCLASS_SPELLS = {
-  // Twilight Domain (Tasha's) domain spells.
+  // Twilight Domain (Tasha's) domain spells — 2 each at cleric levels 1/3/5/7/9.
   'twilight-domain': [
-    'faerie-fire', 'sleep', 'moonbeam', 'see-invisibility', 'aura-of-vitality',
-    'leomunds-tiny-hut', 'aura-of-life', 'greater-invisibility', 'circle-of-power', 'mislead',
+    { idx: 'faerie-fire', level: 1 }, { idx: 'sleep', level: 1 },
+    { idx: 'moonbeam', level: 3 }, { idx: 'see-invisibility', level: 3 },
+    { idx: 'aura-of-vitality', level: 5 }, { idx: 'leomunds-tiny-hut', level: 5 },
+    { idx: 'aura-of-life', level: 7 }, { idx: 'greater-invisibility', level: 7 },
+    { idx: 'circle-of-power', level: 9 }, { idx: 'mislead', level: 9 },
   ],
 };
+
+// Hand-authored spells not present in the SRD dataset (class-spells.js).
+// Same shape as SPELLS entries; spellByIndex() falls back here.
+const EXTRA_SPELLS = [
+  { index: 'aura-of-vitality', name: 'Aura of Vitality', level: 3, school: 'Evocation',
+    casting_time: '1 action', range: 'Self (30-foot radius)', components: 'V', material: '',
+    duration: 'Concentration, up to 1 minute', concentration: true, ritual: false,
+    classes: ['cleric','druid','paladin','sorcerer'],
+    desc: 'Healing energy radiates from you in a 30-foot-radius aura that moves with you. As a bonus action you can cause one creature in the aura (including you) to regain 2d6 hit points.' },
+  { index: 'leomunds-tiny-hut', name: "Leomund's Tiny Hut", level: 3, school: 'Evocation',
+    casting_time: '1 minute', range: 'Self (10-foot-radius hemisphere)', components: 'V, S, M', material: 'a small crystal bead',
+    duration: '8 hours', concentration: false, ritual: true,
+    classes: ['bard','wizard'],
+    desc: 'A 10-foot-radius immobile dome of force springs into existence around you for the duration; the spell ends if you leave. Up to nine Medium or smaller creatures can fit inside. The atmosphere is comfortable and dry regardless of the weather outside. Creatures and objects inside when cast can pass through freely; all others are barred. The dome is opaque from outside (any color you choose) and transparent from inside.' },
+  { index: 'aura-of-life', name: 'Aura of Life', level: 4, school: 'Abjuration',
+    casting_time: '1 action', range: 'Self (30-foot radius)', components: 'V', material: '',
+    duration: 'Concentration, up to 10 minutes', concentration: true, ritual: false,
+    classes: ['cleric','paladin'],
+    desc: 'Life-preserving energy radiates in a 30-foot-radius aura that moves with you. Each nonhostile creature in the aura (including you) has resistance to necrotic damage, and its hit point maximum can’t be reduced. A nonhostile living creature regains 1 hit point when it starts its turn in the aura with 0 hit points.' },
+  { index: 'circle-of-power', name: 'Circle of Power', level: 5, school: 'Abjuration',
+    casting_time: '1 action', range: 'Self (30-foot radius)', components: 'V', material: '',
+    duration: 'Concentration, up to 10 minutes', concentration: true, ritual: false,
+    classes: ['cleric','paladin'],
+    desc: 'Divine energy distorts magic within a 30-foot-radius aura that moves with you. Friendly creatures in the area (including you) have advantage on saving throws against spells and other magical effects. When an affected creature succeeds on a save against an effect that allows a save for half damage, it instead takes no damage.' },
+];

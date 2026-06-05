@@ -3056,23 +3056,38 @@ function getSpellSlotMax(spellLevel) {
 }
 
 function spellByIndex(idx) {
-  return (typeof SPELLS !== 'undefined') ? SPELLS.find(s => s.index === idx) : null;
+  let sp = (typeof SPELLS !== 'undefined') ? SPELLS.find(s => s.index === idx) : null;
+  if (!sp && typeof EXTRA_SPELLS !== 'undefined') sp = EXTRA_SPELLS.find(s => s.index === idx);
+  return sp || null;
 }
 
-/** Auto-add subclass/domain spells (always prepared) for the current subclasses. */
+/** Sync subclass/domain spells (always prepared): add those granted by the
+ *  character's class level, and prune any that are no longer granted. */
 function syncDomainSpells() {
   if (typeof SUBCLASS_SPELLS === 'undefined') return;
+  // Domain spells the character currently qualifies for (granted at/below class level).
+  const granted = new Set();
   readMulticlassRows().forEach(r => {
     const slug = parseSubclassSlug(r.raw);
     if (!slug) return;
     const key = Object.keys(SUBCLASS_SPELLS).find(k => slug === k || slug.includes(k) || k.includes(slug));
     if (!key) return;
-    SUBCLASS_SPELLS[key].forEach(idx => {
-      if (spellByIndex(idx) && !spellItems.some(s => s.index === idx)) {
-        spellItems.push({ index: idx, prepared: true, domain: true });
-      }
+    SUBCLASS_SPELLS[key].forEach(entry => {
+      const idx = typeof entry === 'string' ? entry : entry.idx;
+      const reqLevel = typeof entry === 'string' ? 1 : (entry.level || 1);
+      if (r.level >= reqLevel && spellByIndex(idx)) granted.add(idx);
     });
   });
+  // Prune domain spells no longer granted (e.g. after a level change), then add new ones.
+  const before = spellItems.length;
+  spellItems = spellItems.filter(s => !s.domain || granted.has(s.index));
+  granted.forEach(idx => {
+    if (!spellItems.some(s => s.index === idx)) {
+      spellItems.push({ index: idx, prepared: true, domain: true });
+    }
+  });
+  // Persist the cleanup if the set changed (e.g. removing stale spells on load).
+  if (spellItems.length !== before) saveSheet(true);
 }
 
 /** Rebuild the Spells section. Hidden unless a caster class is present. */
